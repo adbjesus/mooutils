@@ -1,0 +1,21 @@
+BasedOnStyle: Google
+ColumnLimit: 100
+AllowAllConstructorInitializersOnNextLine: false
+AllowShortBlocksOnASingleLine: Always
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: false
+BreakConstructorInitializers: BeforeComma
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex:           '^(<|")catch2/'
+    Priority:        1
+  - Regex:           '^(<|")moco/'
+    Priority:        2
+  - Regex:           '<[[:alnum:]_]+>'
+    Priority:        4
+  - Regex:           '.*'
+    Priority:        3
