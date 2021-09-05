@@ -13,7 +13,7 @@
 namespace moco::algorithms {
 
 template <typename Problem,  // noformat
-          typename Solution = moco::util::solution<Problem>,
+          typename Solution = moco::solution<Problem>,
           typename SolutionQueue = moco::sq_fifo<Solution>,
           typename SolutionSet = moco::ss_unordered_vec<Solution>>
 class pls {

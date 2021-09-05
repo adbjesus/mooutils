@@ -5,17 +5,17 @@
 #include <ranges>
 #include <utility>
 
-namespace moco::util {
+namespace moco {
 
-template <typename Problem>
+template <moco::decision_vector DVec, moco::objective_vector OVec, moco::constraint_vector CVec>
 class solution {
  public:
-  using problem_type = Problem;
-  using decision_vector_type = typename problem_type::decision_vector_type;
-  using objective_vector_type = typename problem_type::objective_vector_type;
-  using constraint_vector_type = typename problem_type::constraint_vector_type;
+  using decision_vector_type = DVec;
+  using objective_vector_type = OVec;
+  using constraint_vector_type = CVec;
 
-  solution(decision_vector_type&& decision_vector, problem_type const& problem)
+  template <typename Problem>
+  solution(decision_vector_type&& decision_vector, Problem const& problem)
       : m_decision_vector(std::move(decision_vector))
       , m_objective_vector(problem.eval_objectives(m_decision_vector))
       , m_constraint_vector(problem.eval_objectives(m_decision_vector))
@@ -29,30 +29,69 @@ class solution {
       , m_feasible(feasible) {}
 
   auto decision_vector() const -> decision_vector_type const& {
-    return decision_vector;
+    return m_decision_vector;
   }
 
   auto objective_vector() const -> objective_vector_type const& {
-    return objective_vector;
+    return m_objective_vector;
   }
 
   auto constraint_vector() const -> constraint_vector_type const& {
-    return constraint_vector;
+    return m_constraint_vector;
   }
 
   auto feasible() const {
     return m_feasible;
   }
 
- private:
+  auto operator==(solution const& other) const {
+    return m_decision_vector == other.m_decision_vector;
+  }
+
+ protected:
   decision_vector_type m_decision_vector;
   objective_vector_type m_objective_vector;
   constraint_vector_type m_constraint_vector;
   bool m_feasible;
 };
 
+template <typename T>
+requires moco::decision_vector<T>
+auto get_decision_vector(T const& t) -> T const& {
+  return t;
+}
+
+template <typename T>
+requires moco::has_decision_vector<T>
+auto get_decision_vector(T const& t) -> decltype(t.decision_vector()) {
+  return t.decision_vector();
+}
+
+template <typename T>
+requires moco::objective_vector<T>
+auto get_objective_vector(T const& t) -> T const& {
+  return t;
+}
+
+template <typename T>
+requires moco::has_objective_vector<T>
+auto get_objective_vector(T const& t) -> decltype(t.objective_vector()) {
+  return t.objective_vector();
+}
+
+template <typename T>
+requires moco::constraint_vector<T>
+auto get_constraint_vector(T const& t) -> T const& {
+  return t;
+}
+
+template <typename T>
+requires moco::has_constraint_vector<T>
+auto get_constraint_vector(T const& t) -> decltype(t.constraint_vector()) {
+  return t.constraint_vector();
+}
+
 // Takes a range of solutions and returns a view over the decision vectors
-// TODO use concept instead of typename
 template <moco::solution_set T>
 constexpr auto decision_vectors(T const& t) {
   return std::views::transform(
@@ -77,4 +116,4 @@ constexpr auto contraint_vectors(T const& t) {
   });
 }
 
-}  // namespace moco::util
+}  // namespace moco

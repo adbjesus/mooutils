@@ -73,10 +73,11 @@ using solution_t = std::ranges::range_value_t<T>;
 template<typename T>
 concept mutable_solution_set =
   solution_set<T> &&
-  requires(T &t, solution_t<T> &&s) {
+  requires(T &t, solution_t<T> &&s, std::ranges::iterator_t<T> it) {
     { t.insert(std::move(s)) } -> std::same_as<bool>;
     { t.insert_unchecked(std::move(s)) };
-    { t.remove(s) } -> std::same_as<bool>;
+    { t.erase(it) } -> std::same_as<bool>;
+    { t.erase(it, it) } -> std::same_as<bool>;
   };
 
 template<typename T>

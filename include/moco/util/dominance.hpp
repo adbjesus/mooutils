@@ -1,6 +1,7 @@
 #pragma once
 
 #include <moco/util/concepts.hpp>
+#include <moco/util/solution.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -10,6 +11,7 @@ namespace moco {
 
 // TODO add dominance relations with custom dominance order (currently assumes maximizing)
 // TODO add execution policy
+// TODO add dominated variants?
 // TODO use macros to automatically generate the range based functions
 
 template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator I2>
@@ -27,15 +29,9 @@ template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator 
 // Undefined behavior if `v1` and `v2` have different sizes.
 template <moco::is_or_has_objective_vector V1, moco::is_or_has_objective_vector V2>
 [[nodiscard]] constexpr auto equivalent(V1 const& v1, V2 const& v2) noexcept -> bool {
-  if constexpr (has_objective_vector<V1> && has_objective_vector<V2>) {
-    return equivalent(v1.objective_vector(), v2.objective_vector());
-  } else if constexpr (has_objective_vector<V1>) {
-    return equivalent(v1.objective_vector(), v2);
-  } else if constexpr (has_objective_vector<V1>) {
-    return equivalent(v1, v2.objective_vector());
-  } else {
-    return equivalent(std::ranges::begin(v1), std::ranges::end(v1), std::ranges::begin(v2));
-  }
+  auto const& ov1 = get_objective_vector(v1);
+  auto const& ov2 = get_objective_vector(v2);
+  return equivalent(std::ranges::begin(ov1), std::ranges::end(ov1), std::ranges::begin(ov2));
 }
 
 template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator I2>
@@ -53,15 +49,9 @@ template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator 
 // Undefined behavior if `v1` and `v2` have different sizes.
 template <moco::is_or_has_objective_vector V1, moco::is_or_has_objective_vector V2>
 [[nodiscard]] constexpr auto weakly_dominates(V1 const& v1, V2 const& v2) noexcept -> bool {
-  if constexpr (has_objective_vector<V1> && has_objective_vector<V2>) {
-    return weakly_dominates(v1.objective_vector(), v2.objective_vector());
-  } else if constexpr (has_objective_vector<V1>) {
-    return weakly_dominates(v1.objective_vector(), v2);
-  } else if constexpr (has_objective_vector<V1>) {
-    return weakly_dominates(v1, v2.objective_vector());
-  } else {
-    return weakly_dominates(std::ranges::begin(v1), std::ranges::end(v1), std::ranges::begin(v2));
-  }
+  auto const& ov1 = get_objective_vector(v1);
+  auto const& ov2 = get_objective_vector(v2);
+  return weakly_dominates(std::ranges::begin(ov1), std::ranges::end(ov1), std::ranges::begin(ov2));
 }
 
 template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator I2>
@@ -81,15 +71,9 @@ template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator 
 // Undefined behavior if `v1` and `v2` have different sizes.
 template <moco::is_or_has_objective_vector V1, moco::is_or_has_objective_vector V2>
 [[nodiscard]] constexpr auto dominates(V1 const& v1, V2 const& v2) noexcept -> bool {
-  if constexpr (has_objective_vector<V1> && has_objective_vector<V2>) {
-    return dominates(v1.objective_vector(), v2.objective_vector());
-  } else if constexpr (has_objective_vector<V1>) {
-    return dominates(v1.objective_vector(), v2);
-  } else if constexpr (has_objective_vector<V1>) {
-    return dominates(v1, v2.objective_vector());
-  } else {
-    return dominates(std::ranges::begin(v1), std::ranges::end(v1), std::ranges::begin(v2));
-  }
+  auto const& ov1 = get_objective_vector(v1);
+  auto const& ov2 = get_objective_vector(v2);
+  return dominates(std::ranges::begin(ov1), std::ranges::end(ov1), std::ranges::begin(ov2));
 }
 
 template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator I2>
@@ -107,15 +91,10 @@ template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator 
 // Undefined behavior if `v1` and `v2` have different sizes.
 template <moco::is_or_has_objective_vector V1, moco::is_or_has_objective_vector V2>
 [[nodiscard]] constexpr auto strictly_dominates(V1 const& v1, V2 const& v2) noexcept -> bool {
-  if constexpr (has_objective_vector<V1> && has_objective_vector<V2>) {
-    return strictly_dominates(v1.objective_vector(), v2.objective_vector());
-  } else if constexpr (has_objective_vector<V1>) {
-    return strictly_dominates(v1.objective_vector(), v2);
-  } else if constexpr (has_objective_vector<V1>) {
-    return strictly_dominates(v1, v2.objective_vector());
-  } else {
-    return strictly_dominates(std::ranges::begin(v1), std::ranges::end(v1), std::ranges::begin(v2));
-  }
+  auto const& ov1 = get_objective_vector(v1);
+  auto const& ov2 = get_objective_vector(v2);
+  return strictly_dominates(std::ranges::begin(ov1), std::ranges::end(ov1),
+                            std::ranges::begin(ov2));
 }
 
 template <std::input_iterator I1, std::sentinel_for<I1> S1,  // noformat
@@ -136,16 +115,10 @@ template <std::input_iterator I1, std::sentinel_for<I1> S1,  // noformat
 // Undefined behavior if `v1` and `v2` have different sizes.
 template <moco::is_or_has_objective_vector V1, moco::is_or_has_objective_vector V2>
 [[nodiscard]] constexpr auto incomparable(V1 const& v1, V2 const& v2) noexcept -> bool {
-  if constexpr (has_objective_vector<V1> && has_objective_vector<V2>) {
-    return incomparable(v1.objective_vector(), v2.objective_vector());
-  } else if constexpr (has_objective_vector<V1>) {
-    return incomparable(v1.objective_vector(), v2);
-  } else if constexpr (has_objective_vector<V1>) {
-    return incomparable(v1, v2.objective_vector());
-  } else {
-    return incomparable(std::ranges::begin(v1), std::ranges::end(v1),  // noformat
-                        std::ranges::begin(v2), std::ranges::end(v2));
-  }
+  auto const& ov1 = get_objective_vector(v1);
+  auto const& ov2 = get_objective_vector(v2);
+  return incomparable(std::ranges::begin(ov1), std::ranges::end(ov1), std::ranges::begin(ov2),
+                      std::ranges::end(ov2));
 }
 
 /* Dominance relations between an objective vector and a set */
@@ -252,13 +225,15 @@ requires moco::is_or_has_objective_vector<moco::solution_t<S>>
 template <typename T, typename U = T>
 concept dominance_comparable = requires(T const& t, U const& u) {
   {equivalent(t, u)};
+  {equivalent(u, t)};
   {weakly_dominates(t, u)};
+  {weakly_dominates(u, t)};
   {dominates(t, u)};
+  {dominates(u, t)};
   {strictly_dominates(t, u)};
-  {weakly_dominated(t, u)};
-  {dominated(t, u)};
-  {strictly_dominated(t, u)};
+  {strictly_dominates(u, t)};
   {incomparable(t, u)};
+  {incomparable(u, t)};
 };
 
 }  // namespace moco

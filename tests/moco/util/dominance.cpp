@@ -1,4 +1,5 @@
 #include <catch2/catch.hpp>
+
 #include <moco/util/dominance.hpp>
 
 // TODO rapidcheck (or similar) for random/property test cases
