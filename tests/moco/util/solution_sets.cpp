@@ -71,108 +71,105 @@ using dvec_type = std::array<size_t, 1>;
 using ovec_type = std::vector<data_type>;
 using cvec_type = std::array<size_t, 0>;
 using solution_type = moco::solution<dvec_type, ovec_type, cvec_type>;
-using nd_solution_multiset_types = std::tuple<moco::nd_solution_multivector<solution_type>,
-                                              moco::nd_ordered_solution_multivector<solution_type>,
-                                              moco::nd_ordered_solution_multilist<solution_type>,
-                                              moco::nd_ordered_solution_multiset<solution_type>>;
+using nd_solution_multiset_types =
+    std::tuple<moco::solution_sets::multivector<solution_type>,
+               moco::solution_sets::sorted_multivector<solution_type>,
+               moco::solution_sets::sorted_multilist<solution_type>,
+               moco::solution_sets::sorted_multiset<solution_type>>;
 
-TEMPLATE_LIST_TEST_CASE("nd_solution_set with random solutions", "[nd_solution_set][template]",
+TEMPLATE_LIST_TEST_CASE("nd_solution_multiset with random solutions", "[nd_solution_set][template]",
                         nd_solution_multiset_types) {
   std::random_device rd("/dev/urandom");
   std::mt19937 rng(rd());
 
-  for (size_t n = 10; n <= 1000; n *= 10) {
-    for (size_t m = 2; m <= 10; m += 1) {
-      for (double p = 0.3; p < 0.71; p += 0.1) {
-        auto points = generate_prob_nondominated_points<data_type>(n, m, p, rng);
-        auto solutions = std::vector<solution_type>();
-        solutions.reserve(n);
-        for (size_t i = 0; i < n; ++i) {
-          solutions.emplace_back(dvec_type{i}, std::move(points[i]), cvec_type{}, true);
-        }
+  size_t n = GENERATE(10, 100, 1000);
+  size_t m = GENERATE(2, 3, 5, 7);
+  double p = GENERATE(0.3, 0.5, 0.7);
 
-        auto ndom_solutions = filter_nondominated_points(solutions);
+  auto points = generate_prob_nondominated_points<data_type>(n, m, p, rng);
+  auto solutions = std::vector<solution_type>();
+  solutions.reserve(n);
+  for (size_t i = 0; i < n; ++i) {
+    solutions.emplace_back(dvec_type{i}, std::move(points[i]), cvec_type{}, true);
+  }
 
-        auto set = TestType();
-        for (auto const &s : solutions) {
-          if (weakly_dominates(set, s)) {
-            REQUIRE(set.insert(s) == false);
-          } else {
-            REQUIRE(set.insert(s) == true);
-          }
-        }
+  auto ndom_solutions = filter_nondominated_points(solutions);
 
-        REQUIRE(set.size() == ndom_solutions.size());
-
-        auto cmp = [](auto const &lhs, auto const &rhs) {
-          return lhs.decision_vector() < rhs.decision_vector();
-        };
-
-        auto aux = std::vector(set.begin(), set.end());
-        std::ranges::sort(aux, cmp);
-        std::ranges::sort(ndom_solutions, cmp);
-
-        REQUIRE(std::ranges::equal(aux, ndom_solutions));
-
-        // A second pass through should not change the set
-        for (auto const &s : solutions) {
-          REQUIRE(set.insert(s) == false);
-        }
-
-        REQUIRE(set.size() == ndom_solutions.size());
-
-        // it may change the order but not the items
-        aux = std::vector(set.begin(), set.end());
-        std::ranges::sort(aux, cmp);
-        REQUIRE(std::ranges::equal(aux, ndom_solutions) == true);
-      }
+  auto set = TestType();
+  for (auto const &s : solutions) {
+    if (weakly_dominates(set, s)) {
+      REQUIRE(set.insert(s) == set.end());
+    } else {
+      REQUIRE(*set.insert(s) == s);
     }
   }
+
+  REQUIRE(set.size() == ndom_solutions.size());
+
+  auto cmp = [](auto const &lhs, auto const &rhs) {
+    return lhs.decision_vector() < rhs.decision_vector();
+  };
+
+  auto aux = std::vector(set.begin(), set.end());
+  std::ranges::sort(aux, cmp);
+  std::ranges::sort(ndom_solutions, cmp);
+
+  REQUIRE(std::ranges::equal(aux, ndom_solutions));
+
+  // A second pass through should not change the set
+  for (auto const &s : solutions) {
+    REQUIRE(set.insert(s) == set.end());
+  }
+
+  REQUIRE(set.size() == ndom_solutions.size());
+
+  // it may change the order but not the items
+  aux = std::vector(set.begin(), set.end());
+  std::ranges::sort(aux, cmp);
+  REQUIRE(std::ranges::equal(aux, ndom_solutions) == true);
 }
 
 // Equivalent solutions are unlikely to appear in the random case, so
 // this is a test to force it.
-TEMPLATE_LIST_TEST_CASE("nd_solution_set with equivalent", "[nd_solution_set][template]",
+TEMPLATE_LIST_TEST_CASE("nd_solution_multiset with equivalent", "[nd_solution_set][template]",
                         nd_solution_multiset_types) {
-  for (size_t n = 10; n <= 1000; n *= 10) {
-    for (size_t m = 2; m <= 10; m += 1) {
-      for (double p = 0.3; p < 0.71; p += 0.1) {
-        auto solutions = std::vector<solution_type>();
-        solutions.reserve(n);
-        for (size_t i = 0; i < n; ++i) {
-          solutions.emplace_back(dvec_type{i}, ovec_type(m, 0), cvec_type{}, true);
-        }
-        auto ndom_solutions = filter_nondominated_points(solutions);
-
-        auto set = TestType();
-        // Every solution should be added in the first pass
-        for (auto const &s : solutions) {
-          REQUIRE(set.insert(s) == true);
-        }
-
-        REQUIRE(set.size() == ndom_solutions.size());
-
-        auto cmp = [](auto const &lhs, auto const &rhs) {
-          return lhs.decision_vector() < rhs.decision_vector();
-        };
-
-        auto aux = std::vector(set.begin(), set.end());
-        std::ranges::sort(aux, cmp);
-        std::ranges::sort(ndom_solutions, cmp);
-
-        REQUIRE(std::ranges::equal(set, ndom_solutions) == true);
-
-        // A second pass should not add any solution
-        for (auto const &s : solutions) {
-          REQUIRE(set.insert(s) == false);
-        }
-
-        REQUIRE(set.size() == ndom_solutions.size());
-
-        aux = std::vector(set.begin(), set.end());
-        std::ranges::sort(aux, cmp);
-        REQUIRE(std::ranges::equal(aux, ndom_solutions) == true);
-      }
-    }
+  size_t n = GENERATE(10, 100, 1000);
+  size_t m = GENERATE(2, 3, 5, 7);
+  double p = GENERATE(0.3, 0.5, 0.7);
+  auto solutions = std::vector<solution_type>();
+  solutions.reserve(n);
+  // Consider a list of equivalent (but not equal) solutions.
+  for (size_t i = 0; i < n; ++i) {
+    solutions.emplace_back(dvec_type{i}, ovec_type(m, 0), cvec_type{}, true);
   }
+  auto ndom_solutions = filter_nondominated_points(solutions);
+
+  auto set = TestType();
+  // Every solution should be added in the first pass
+  for (auto const &s : solutions) {
+    REQUIRE(*set.insert(s) == s);
+  }
+
+  REQUIRE(set.size() == ndom_solutions.size());
+
+  auto cmp = [](auto const &lhs, auto const &rhs) {
+    return lhs.decision_vector() < rhs.decision_vector();
+  };
+
+  auto aux = std::vector(set.begin(), set.end());
+  std::ranges::sort(aux, cmp);
+  std::ranges::sort(ndom_solutions, cmp);
+
+  REQUIRE(std::ranges::equal(set, ndom_solutions) == true);
+
+  // A second pass should not add any solution
+  for (auto const &s : solutions) {
+    REQUIRE(set.insert(s) == set.end());
+  }
+
+  REQUIRE(set.size() == ndom_solutions.size());
+
+  aux = std::vector(set.begin(), set.end());
+  std::ranges::sort(aux, cmp);
+  REQUIRE(std::ranges::equal(aux, ndom_solutions) == true);
 }

@@ -12,7 +12,7 @@
 #include <set>
 #include <vector>
 
-namespace moco {
+namespace moco::solution_sets {
 
 /// Attempts to insert a new solution into a set. If this solution is
 /// equal to or dominated by a solution in the set, then this solution
@@ -63,7 +63,7 @@ namespace moco {
 template <typename Solution, typename Container = std::vector<Solution>>
 requires moco::dominance_comparable<Solution> &&
     std::same_as<Solution, typename Container::value_type>
-class nd_solution_multivector {
+class multivector {
  public:
   using container_type = Container;
   using value_type = typename container_type::value_type;
@@ -73,20 +73,19 @@ class nd_solution_multivector {
 
   template <typename S>
   requires moco::dominance_comparable<S, value_type> && std::convertible_to<S, value_type>
-  constexpr auto insert(S&& solution) -> bool {
+  constexpr auto insert(S&& solution) -> iterator {
     auto first = m_container.begin();
     auto last = m_container.end();
     for (auto it = first; it != last; ++it) {
       if (dominates(*it, solution)) {
-        return false;
+        return last;
       }
       if (weakly_dominates(solution, *it)) {
         if (equivalent(solution, *it)) {
           if (std::any_of(it, last, [solution](auto const& s) { return solution == s; })) {
-            return false;
+            return last;
           } else {
-            insert_unchecked(std::forward<S>(solution));
-            return true;
+            return insert_unchecked(std::forward<S>(solution));
           }
         } else {
           *it = std::forward<S>(solution);
@@ -94,17 +93,16 @@ class nd_solution_multivector {
             return dominates(*it, s);
           };
           erase(std::remove_if(std::next(it), last, remove_pred), last);
-          return true;
+          return it;
         }
       }
     }
-    insert_unchecked(std::forward<S>(solution));
-    return true;
+    return insert_unchecked(std::forward<S>(solution));
   }
 
   template <typename S>
-  constexpr auto insert_unchecked(S&& solution) {
-    m_container.emplace_back(std::forward<S>(solution));
+  constexpr auto insert_unchecked(S&& solution) -> iterator {
+    return m_container.emplace(m_container.end(), std::forward<S>(solution));
   }
 
   constexpr auto erase(iterator it) {
@@ -169,11 +167,11 @@ struct lexicographical_greater {
   }
 };
 
-template <typename Solution, typename Compare = moco::lexicographical_greater<Solution>,
+template <typename Solution, typename Compare = lexicographical_greater<Solution>,
           typename Container = std::vector<Solution>>
 requires moco::dominance_comparable<Solution> &&
     std::same_as<Solution, typename Container::value_type>
-class nd_ordered_solution_multivector {
+class sorted_multivector {
  public:
   using container_type = Container;
   using value_type = typename container_type::value_type;
@@ -184,7 +182,7 @@ class nd_ordered_solution_multivector {
 
   template <typename S>
   requires moco::dominance_comparable<S, value_type> && std::convertible_to<S, value_type>
-  constexpr auto insert(S&& solution) -> bool {
+  constexpr auto insert(S&& solution) -> iterator {
     auto first = m_container.begin();
     auto last = m_container.end();
     auto mid1 = std::lower_bound(first, last, solution, compare{});
@@ -197,20 +195,19 @@ class nd_ordered_solution_multivector {
       if (equivalent(solution, *mid2)) {
         is_equivalent = true;
         if (solution == *mid2) {
-          return false;
+          return last;
         }
       } else {
         break;
       }
     }
     if (is_equivalent) {
-      m_container.emplace(mid2, std::forward<S>(solution));
-      return true;
+      return m_container.emplace(mid2, std::forward<S>(solution));
     }
 
     for (auto it = first; it != mid1; ++it) {
       if (dominates(*it, solution)) {
-        return false;
+        return last;
       }
     }
     auto it = m_container.emplace(mid2, std::forward<S>(solution));
@@ -219,13 +216,13 @@ class nd_ordered_solution_multivector {
     auto aux =
         std::remove_if(std::next(it), last, [it](auto const& s) { return dominates(*it, s); });
     m_container.erase(aux, last);
-    return true;
+    return it;
   }
 
   template <typename S>
-  constexpr auto insert_unchecked(S&& solution) {
+  constexpr auto insert_unchecked(S&& solution) -> iterator {
     auto mid = std::lower_bound(m_container.begin(), m_container.end(), solution, compare{});
-    m_container.emplace(mid, std::forward<S>(solution));
+    return m_container.emplace(mid, std::forward<S>(solution));
   }
 
   constexpr auto erase(iterator it) {
@@ -280,11 +277,11 @@ class nd_ordered_solution_multivector {
   container_type m_container;
 };
 
-template <typename Solution, typename Compare = moco::lexicographical_greater<Solution>,
+template <typename Solution, typename Compare = lexicographical_greater<Solution>,
           typename Container = std::list<Solution>>
 requires moco::dominance_comparable<Solution> &&
     std::same_as<Solution, typename Container::value_type>
-class nd_ordered_solution_multilist {
+class sorted_multilist {
  public:
   using value_type = Solution;
   using compare = Compare;
@@ -295,14 +292,14 @@ class nd_ordered_solution_multilist {
 
   template <typename S>
   requires moco::dominance_comparable<S, value_type> && std::convertible_to<S, value_type>
-  constexpr auto insert(S&& solution) -> bool {
+  constexpr auto insert(S&& solution) -> iterator {
     auto first = m_container.begin();
     auto last = m_container.end();
 
     auto it = first;
     for (; it != last && compare()(*it, solution); ++it) {
       if (dominates(*it, solution)) {
-        return false;
+        return last;
       }
     }
 
@@ -311,7 +308,7 @@ class nd_ordered_solution_multilist {
       if (equivalent(solution, *it)) {
         is_equivalent = true;
         if (solution == *it) {
-          return false;
+          return last;
         }
       } else {
         break;
@@ -330,13 +327,13 @@ class nd_ordered_solution_multilist {
       }
     }
 
-    return true;
+    return it;
   }
 
   template <typename S>
-  constexpr auto insert_unchecked(S&& solution) {
+  constexpr auto insert_unchecked(S&& solution) -> iterator {
     auto mid = std::lower_bound(m_container.begin(), m_container.end(), solution, compare{});
-    m_container.emplace(mid, std::forward<S>(solution));
+    return m_container.emplace(mid, std::forward<S>(solution));
   }
 
   constexpr auto erase(iterator it) {
@@ -391,11 +388,11 @@ class nd_ordered_solution_multilist {
   container_type m_container;
 };
 
-template <typename Solution, typename Compare = moco::lexicographical_greater<Solution>,
+template <typename Solution, typename Compare = lexicographical_greater<Solution>,
           typename Container = std::multiset<Solution, Compare>>
 requires moco::dominance_comparable<Solution> &&
     std::same_as<Solution, typename Container::value_type>
-class nd_ordered_solution_multiset {
+class sorted_multiset {
  public:
   using value_type = Solution;
   using compare = Compare;
@@ -406,7 +403,7 @@ class nd_ordered_solution_multiset {
 
   template <typename S>
   requires moco::dominance_comparable<S, value_type> && std::convertible_to<S, value_type>
-  constexpr auto insert(S&& solution) -> bool {
+  constexpr auto insert(S&& solution) -> iterator {
     auto first = m_container.begin();
     auto last = m_container.end();
     auto mid1 = m_container.lower_bound(solution);
@@ -419,20 +416,19 @@ class nd_ordered_solution_multiset {
       if (equivalent(solution, *mid2)) {
         is_equivalent = true;
         if (solution == *mid2) {
-          return false;
+          return last;
         }
       } else {
         break;
       }
     }
     if (is_equivalent) {
-      m_container.emplace_hint(mid2, std::forward<S>(solution));
-      return true;
+      return m_container.emplace_hint(mid2, std::forward<S>(solution));
     }
 
     for (auto it = first; it != mid1; ++it) {
       if (dominates(*it, solution)) {
-        return false;
+        return last;
       }
     }
     auto it = m_container.emplace_hint(mid2, std::forward<S>(solution));
@@ -443,12 +439,12 @@ class nd_ordered_solution_multiset {
         ++jt;
       }
     }
-    return true;
+    return it;
   }
 
   template <typename S>
-  constexpr auto insert_unchecked(S&& solution) {
-    m_container.emplace(std::forward<S>(solution));
+  constexpr auto insert_unchecked(S&& solution) -> iterator {
+    return m_container.emplace(std::forward<S>(solution));
   }
 
   constexpr auto erase(const_iterator it) {
@@ -495,4 +491,4 @@ class nd_ordered_solution_multiset {
   container_type m_container;
 };
 
-}  // namespace moco
+}  // namespace moco::solution_sets

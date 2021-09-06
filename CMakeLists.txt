@@ -41,7 +41,7 @@ install(TARGETS moco)
 
 # Define solver target
 if(MOCO_BUILD_APPS)
-  # TODO add_subdirectory(apps)
+  add_subdirectory(apps)
 endif()
 
 # Define docs target

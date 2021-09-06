@@ -5,10 +5,10 @@
 #include <type_traits>
 #include <vector>
 
-namespace moco {
+namespace moco::solution_queues {
 
 template <typename Solution, typename Container = std::deque<Solution>>
-class fifo_solution_queue {
+class fifo {
  public:
   using value_type = Solution;
   using container_type = Container;
@@ -33,12 +33,16 @@ class fifo_solution_queue {
     return m_container.empty();
   }
 
+  auto size() {
+    return m_container.size();
+  }
+
  private:
   container_type m_container;
 };
 
 template <typename Solution, typename Container = std::vector<Solution>>
-class lifo_solution_queue {
+class lifo {
  public:
   using value_type = Solution;
   using container_type = Container;
@@ -63,18 +67,22 @@ class lifo_solution_queue {
     return m_container.empty();
   }
 
+  auto size() {
+    return m_container.size();
+  }
+
  private:
   container_type m_container;
 };
 
 template <typename Solution, typename Rng, typename Container = std::vector<Solution>>
-class random_solution_queue {
+class random {
  public:
   using value_type = Solution;
   using rng_type = Rng;
   using container_type = Container;
 
-  explicit random_solution_queue(Rng&& rng)
+  explicit random(Rng&& rng)
       : m_rng(std::move(rng))
       , m_container() {}
 
@@ -104,9 +112,13 @@ class random_solution_queue {
     return m_container.empty();
   }
 
+  auto size() {
+    return m_container.size();
+  }
+
  private:
   container_type m_container;
   rng_type m_rng;
 };
 
-}  // namespace moco
+}  // namespace moco::solution_queues

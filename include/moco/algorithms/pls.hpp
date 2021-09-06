@@ -12,10 +12,11 @@
 
 namespace moco::algorithms {
 
-template <typename Problem,  // noformat
-          typename Solution = moco::solution<Problem>,
-          typename SolutionQueue = moco::sq_fifo<Solution>,
-          typename SolutionSet = moco::ss_unordered_vec<Solution>>
+template <typename Problem,   // noformat
+          typename Solution,  // noformat
+          typename SolutionQueue = moco::solution_queues::fifo<Solution>,
+          typename SolutionSet =
+              moco::solution_sets::multivector<std::reference_wrapper<const Solution>>>
 class pls {
  public:
   using problem_type = Problem;
@@ -35,16 +36,20 @@ class pls {
   }
 
   auto solve(problem_type const& p) {
-    // Evaluate all initial dvecs
     for (auto&& dvec : initial_dvecs) {
-      solutions.emplace(std::move(dvec), p);
+      solutions.insert(solution_type(std::move(dvec), p));
       unexplored.emplace_back(solutions.back());
     }
-    // PLS loop
     while (!unexplored.empty()) {
-      // choose a solution from unexplored
-      // loop over neighborhood
+      auto s = unexplored.pop();
+      for (auto&& neighbor : solution.neighborhood(problem)) {
+        auto it = solutions.insert(std::move(neighbor));
+        if (it != solutions.end()) {
+          unexplored.emplace_back(*it);
+        }
+      }
     }
+    return solutions;
   }
 
  private:

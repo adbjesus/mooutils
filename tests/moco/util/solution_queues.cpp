@@ -19,7 +19,7 @@
 
 TEST_CASE("fifo_solution_queue", "[solution_queue]") {
   int n = GENERATE(10, 100, 1000);
-  auto queue = moco::fifo_solution_queue<int>();
+  auto queue = moco::solution_queues::fifo<int>();
   for (int i : std::views::iota(0, n)) {
     queue.push(i);
   }
@@ -32,7 +32,7 @@ TEST_CASE("fifo_solution_queue", "[solution_queue]") {
 
 TEST_CASE("lifo_solution_queue", "[solution_queue]") {
   int n = GENERATE(10, 100, 1000);
-  auto queue = moco::lifo_solution_queue<int>();
+  auto queue = moco::solution_queues::lifo<int>();
   for (int i : std::views::iota(0, n)) {
     queue.push(i);
   }
@@ -50,13 +50,19 @@ TEST_CASE("random_solution_queue", "[solution_queue]") {
   int n = GENERATE(10, 100, 1000);
   auto seed = GENERATE(take(1, random(std::numeric_limits<rng_result_type>::min(),
                                       std::numeric_limits<rng_result_type>::max())));
-  auto queue = moco::random_solution_queue<int, rng_type>(rng_type(seed));
+  auto queue = moco::solution_queues::random<int, rng_type>(rng_type(seed));
+
+  REQUIRE(queue.empty() == true);
+
   for (int i : std::views::iota(0, n)) {
     queue.push(i);
+    REQUIRE(queue.empty() == false);
   }
+
   for (int _i : std::views::iota(0, n)) {
     REQUIRE(queue.empty() == false);
     queue.pop();
   }
+
   REQUIRE(queue.empty() == true);
 }

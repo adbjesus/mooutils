@@ -14,12 +14,12 @@ class solution {
   using objective_vector_type = OVec;
   using constraint_vector_type = CVec;
 
-  template <typename Problem>
-  solution(decision_vector_type&& decision_vector, Problem const& problem)
-      : m_decision_vector(std::move(decision_vector))
-      , m_objective_vector(problem.eval_objectives(m_decision_vector))
-      , m_constraint_vector(problem.eval_objectives(m_decision_vector))
-      , m_feasible(problem.feasible(m_constraint_vector)) {}
+  // template <typename Problem>
+  // solution(decision_vector_type&& decision_vector, Problem const& problem)
+  //     : m_decision_vector(std::move(decision_vector))
+  //     , m_objective_vector(problem.eval_objectives(m_decision_vector))
+  //     , m_constraint_vector(problem.eval_constraints(m_decision_vector))
+  //     , m_feasible(problem.feasible(m_constraint_vector)) {}
 
   solution(decision_vector_type&& decision_vector, objective_vector_type&& objective_vector,
            constraint_vector_type&& constraint_vector, bool feasible)
@@ -27,6 +27,18 @@ class solution {
       , m_objective_vector(std::move(objective_vector))
       , m_constraint_vector(std::move(constraint_vector))
       , m_feasible(feasible) {}
+
+  auto decision_vector() -> decision_vector_type& {
+    return m_decision_vector;
+  }
+
+  auto objective_vector() -> objective_vector_type& {
+    return m_objective_vector;
+  }
+
+  auto constraint_vector() -> constraint_vector_type& {
+    return m_constraint_vector;
+  }
 
   auto decision_vector() const -> decision_vector_type const& {
     return m_decision_vector;

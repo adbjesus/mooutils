@@ -1,16 +1,18 @@
 #include <catch2/catch.hpp>
+
 #include <moco/problems/mobkp.hpp>
+
 #include <sstream>
 
-// TODO make a rapidcheck test or parametrize test
 TEST_CASE("mobkp", "[problems][mobkp]") {
   using data_type = double;
   using problem_type = moco::problems::mobkp<data_type>;
   using size_type = typename problem_type::size_type;
 
-  size_type ni = 100;
-  size_type no = 3;
-  size_type nc = 2;
+  size_type ni = GENERATE(10, 100, 1000);
+  size_type no = GENERATE(2, 3, 5, 7);
+  size_type nc = GENERATE(1, 2, 4);
+
   size_type n = nc + ni * (no + nc);
 
   std::stringstream aux;
