@@ -6,8 +6,8 @@
             "displayName": "Default Config",
             "description": "Default build using Ninja Multi-Config generator",
             "generator": "Ninja Multi-Config",
-            "binaryDir": "${sourceDir}/build",
-        },
+            "binaryDir": "${sourceDir}/build"
+        }
     ],
     "buildPresets": [
         {
@@ -29,5 +29,5 @@
             "output": { "outputOnFailure": true },
             "execution": { "noTestsAction": "error", "stopOnFailure": true }
         }
-    ],
+    ]
 }
