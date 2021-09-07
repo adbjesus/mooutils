@@ -1,12 +1,12 @@
 #include <catch2/catch.hpp>
 
-#include <moco/problems/mobkp.hpp>
+#include <moutils/problems/mobkp.hpp>
 
 #include <sstream>
 
 TEST_CASE("mobkp", "[problems][mobkp]") {
   using data_type = double;
-  using problem_type = moco::problems::mobkp<data_type>;
+  using problem_type = moutils::problems::mobkp<data_type>;
   using size_type = typename problem_type::size_type;
 
   size_type ni = GENERATE(10, 100, 1000);

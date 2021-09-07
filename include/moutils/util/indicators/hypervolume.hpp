@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace moco::indicators {
+namespace moutils::indicators {
 
 // Class to keep the up to date hypervolume of a set of non-dominated
 // objective vectors using the WFG algorithm. There are
@@ -685,4 +685,4 @@ auto sorted_set_hv3d(S const& s, R const& r) {
   return vol;
 }
 
-}  // namespace moco::indicators
+}  // namespace moutils::indicators

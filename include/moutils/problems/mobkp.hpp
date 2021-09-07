@@ -8,7 +8,7 @@
 #include <utility>
 #include <vector>
 
-namespace moco::problems {
+namespace moutils::problems {
 
 template <typename T, typename C = std::vector<T>>
 class mobkp {
@@ -105,4 +105,4 @@ class mobkp {
   container_type m_data;  // data container (constraints, and items)
 };
 
-}  // namespace moco::problems
+}  // namespace moutils::problems

@@ -1,6 +1,6 @@
-# MOCO
+# moutils
 
-Library and solver for Multi-Objective Combinatorial Optimization (MOCO)
+Library and solver for Multi-Objective Combinatorial Optimization (MOUTILS)
 problems focusing on anytime algorithms.
 
 Note: This is still in the early phases of development, so expect things
@@ -102,17 +102,17 @@ cmake --build build/release
 
 This will build:
 
-- The library (header only) under the namespace `moco`
-- The solver, an executable named `mocosol`
+- The library (header only) under the namespace `moutils`
+- The solver, an executable named `moutilssol`
 
 There are some options in CMake project definition that you might want to
 configure, which should all be self explanatory
 
 | Flag                | Default | Description      |
 |---------------------|---------|------------------|
-| `MOCO_BUILD_SOLVER` | `ON`    | Build the solver |
-| `MOCO_BUILD_TESTS`  | `ON`    | Build the tests  |
-| `MOCO_BUILD_DOCS`   | `ON`    | Build the tests  |
+| `MOUTILS_BUILD_SOLVER` | `ON`    | Build the solver |
+| `MOUTILS_BUILD_TESTS`  | `ON`    | Build the tests  |
+| `MOUTILS_BUILD_DOCS`   | `ON`    | Build the tests  |
 
 ## Using the library
 
@@ -123,5 +123,5 @@ The library is documented at TODO.
 To see usage commands use:
 
 ```sh
-mocosol --help
+moutilssol --help
 ```

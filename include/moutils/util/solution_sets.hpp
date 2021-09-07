@@ -1,8 +1,8 @@
 #pragma once
 
-#include <moco/util/concepts.hpp>
-#include <moco/util/dominance.hpp>
-#include <moco/util/solution.hpp>
+#include <moutils/util/concepts.hpp>
+#include <moutils/util/dominance.hpp>
+#include <moutils/util/solution.hpp>
 
 #include <concepts>
 #include <iostream>
@@ -12,7 +12,7 @@
 #include <set>
 #include <vector>
 
-namespace moco::solution_sets {
+namespace moutils::solution_sets {
 
 /// Attempts to insert a new solution into a set. If this solution is
 /// equal to or dominated by a solution in the set, then this solution
@@ -61,7 +61,7 @@ namespace moco::solution_sets {
 // auto insert_solution_inorder(SolutionSet& s, Solution&& s, DominanceOrder cmp) -> bool {}
 
 template <typename Solution, typename Container = std::vector<Solution>>
-requires moco::dominance_comparable<Solution> &&
+requires moutils::dominance_comparable<Solution> &&
     std::same_as<Solution, typename Container::value_type>
 class multivector {
  public:
@@ -72,7 +72,7 @@ class multivector {
   using const_iterator = typename container_type::const_iterator;
 
   template <typename S>
-  requires moco::dominance_comparable<S, value_type> && std::convertible_to<S, value_type>
+  requires moutils::dominance_comparable<S, value_type> && std::convertible_to<S, value_type>
   constexpr auto insert(S&& solution) -> iterator {
     auto first = m_container.begin();
     auto last = m_container.end();
@@ -158,18 +158,18 @@ class multivector {
 };
 
 template <typename Lhs, typename Rhs = Lhs>
-requires moco::is_or_has_objective_vector<Lhs> && moco::is_or_has_objective_vector<Rhs>
+requires moutils::is_or_has_objective_vector<Lhs> && moutils::is_or_has_objective_vector<Rhs>
 struct lexicographical_greater {
   auto operator()(Lhs const& lhs, Rhs const& rhs) const -> bool {
-    auto const& ovl = moco::get_objective_vector(lhs);
-    auto const& ovr = moco::get_objective_vector(rhs);
+    auto const& ovl = moutils::get_objective_vector(lhs);
+    auto const& ovr = moutils::get_objective_vector(rhs);
     return std::ranges::lexicographical_compare(ovr, ovl);
   }
 };
 
 template <typename Solution, typename Compare = lexicographical_greater<Solution>,
           typename Container = std::vector<Solution>>
-requires moco::dominance_comparable<Solution> &&
+requires moutils::dominance_comparable<Solution> &&
     std::same_as<Solution, typename Container::value_type>
 class sorted_multivector {
  public:
@@ -181,7 +181,7 @@ class sorted_multivector {
   using const_iterator = typename container_type::const_iterator;
 
   template <typename S>
-  requires moco::dominance_comparable<S, value_type> && std::convertible_to<S, value_type>
+  requires moutils::dominance_comparable<S, value_type> && std::convertible_to<S, value_type>
   constexpr auto insert(S&& solution) -> iterator {
     auto first = m_container.begin();
     auto last = m_container.end();
@@ -279,7 +279,7 @@ class sorted_multivector {
 
 template <typename Solution, typename Compare = lexicographical_greater<Solution>,
           typename Container = std::list<Solution>>
-requires moco::dominance_comparable<Solution> &&
+requires moutils::dominance_comparable<Solution> &&
     std::same_as<Solution, typename Container::value_type>
 class sorted_multilist {
  public:
@@ -291,7 +291,7 @@ class sorted_multilist {
   using const_iterator = typename container_type::const_iterator;
 
   template <typename S>
-  requires moco::dominance_comparable<S, value_type> && std::convertible_to<S, value_type>
+  requires moutils::dominance_comparable<S, value_type> && std::convertible_to<S, value_type>
   constexpr auto insert(S&& solution) -> iterator {
     auto first = m_container.begin();
     auto last = m_container.end();
@@ -390,7 +390,7 @@ class sorted_multilist {
 
 template <typename Solution, typename Compare = lexicographical_greater<Solution>,
           typename Container = std::multiset<Solution, Compare>>
-requires moco::dominance_comparable<Solution> &&
+requires moutils::dominance_comparable<Solution> &&
     std::same_as<Solution, typename Container::value_type>
 class sorted_multiset {
  public:
@@ -402,7 +402,7 @@ class sorted_multiset {
   using const_iterator = typename container_type::const_iterator;
 
   template <typename S>
-  requires moco::dominance_comparable<S, value_type> && std::convertible_to<S, value_type>
+  requires moutils::dominance_comparable<S, value_type> && std::convertible_to<S, value_type>
   constexpr auto insert(S&& solution) -> iterator {
     auto first = m_container.begin();
     auto last = m_container.end();
@@ -491,4 +491,4 @@ class sorted_multiset {
   container_type m_container;
 };
 
-}  // namespace moco::solution_sets
+}  // namespace moutils::solution_sets

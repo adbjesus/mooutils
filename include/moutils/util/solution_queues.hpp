@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace moco::solution_queues {
+namespace moutils::solution_queues {
 
 template <typename Solution, typename Container = std::deque<Solution>>
 class fifo {
@@ -121,4 +121,4 @@ class random {
   rng_type m_rng;
 };
 
-}  // namespace moco::solution_queues
+}  // namespace moutils::solution_queues

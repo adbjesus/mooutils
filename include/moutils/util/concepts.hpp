@@ -4,7 +4,7 @@
 #include <ranges>
 #include <type_traits>
 
-namespace moco {
+namespace moutils {
 
 // clang-format off
 
