@@ -45,7 +45,7 @@ TEST_CASE("lifo queue", "[queues]") {
 
 TEST_CASE("random queue", "[queues]") {
   using rng_type = std::mt19937_64;
-  using rng_result_type = std::mt19937_64::result_type;
+  using rng_result_type = typename rng_type::result_type;
 
   int n = GENERATE(10, 100, 1000);
   auto seed = GENERATE(take(1, random(std::numeric_limits<rng_result_type>::min(),
@@ -59,7 +59,7 @@ TEST_CASE("random queue", "[queues]") {
     REQUIRE(queue.empty() == false);
   }
 
-  for (int _i : std::views::iota(0, n)) {
+  for ([[maybe_unused]] int i : std::views::iota(0, n)) {
     REQUIRE(queue.empty() == false);
     queue.pop();
   }

@@ -125,30 +125,30 @@ template <mooutils::is_or_has_objective_vector V1, mooutils::is_or_has_objective
 
 template <mooutils::is_or_has_objective_vector V, mooutils::solution_set S>
 requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
-[[nodiscard]] constexpr auto weakly_dominates(V const& v, S const& s) -> bool {
+[[nodiscard]] constexpr auto weakly_dominates(V const& v, S const& set) -> bool {
   if constexpr (requires {
-                  { s.weakly_dominated(v) } -> std::same_as<bool>;
+                  { set.weakly_dominated(v) } -> std::same_as<bool>;
                 }) {
     // if the set has an equivalent method call that method
-    s.weakly_dominated(v);
+    set.weakly_dominated(v);
   } else {
     // otherwise use a default implementation
-    return std::ranges::all_of(s, [&v](auto const& s) { return weakly_dominates(v, s); });
+    return std::ranges::all_of(set, [&v](auto const& s) { return weakly_dominates(v, s); });
   }
 }
 
 template <mooutils::is_or_has_objective_vector V, mooutils::solution_set S>
 requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
-[[nodiscard]] constexpr auto dominates(V const& v, S const& s) -> bool {
+[[nodiscard]] constexpr auto dominates(V const& v, S const& set) -> bool {
   if constexpr (requires {
-                  { s.dominated(v) } -> std::same_as<bool>;
+                  { set.dominated(v) } -> std::same_as<bool>;
                 }) {
     // if the set has an equivalent method call that method
-    s.dominated(v);
+    set.dominated(v);
   } else {
     // otherwise use a default implementation
-    auto end = std::ranges::end(s);
-    for (auto it = std::ranges::begin(s); it != end; ++it) {
+    auto end = std::ranges::end(set);
+    for (auto it = std::ranges::begin(set); it != end; ++it) {
       if (!weakly_dominates(v, *it)) {
         return false;
       }
@@ -163,15 +163,15 @@ requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
 // For every solution
 template <mooutils::is_or_has_objective_vector V, mooutils::solution_set S>
 requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
-[[nodiscard]] constexpr auto strictly_dominates(V const& v, S const& s) -> bool {
+[[nodiscard]] constexpr auto strictly_dominates(V const& v, S const& set) -> bool {
   if constexpr (requires {
-                  { s.strictly_dominated(v) } -> std::same_as<bool>;
+                  { set.strictly_dominated(v) } -> std::same_as<bool>;
                 }) {
     // if the set has an equivalent method call that method
-    s.strictly_dominated(v);
+    set.strictly_dominated(v);
   } else {
     // otherwise use a default implementation
-    return std::ranges::all_of(s, [&v](auto const& s) { return dominates(v, s); });
+    return std::ranges::all_of(set, [&v](auto const& s) { return dominates(v, s); });
   }
 }
 
@@ -179,44 +179,44 @@ requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
 
 template <mooutils::solution_set S, mooutils::is_or_has_objective_vector V>
 requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
-[[nodiscard]] constexpr auto weakly_dominates(S const& s, V const& v) -> bool {
+[[nodiscard]] constexpr auto weakly_dominates(S const& set, V const& v) -> bool {
   if constexpr (requires {
-                  { s.weakly_dominates(v) } -> std::same_as<bool>;
+                  { set.weakly_dominates(v) } -> std::same_as<bool>;
                 }) {
     // if the set has such a method call that method
-    s.weakly_dominates(v);
+    set.weakly_dominates(v);
   } else {
     // otherwise use a default implementation
-    return std::ranges::any_of(s, [&v](auto const& s) { return weakly_dominates(s, v); });
+    return std::ranges::any_of(set, [&v](auto const& s) { return weakly_dominates(s, v); });
   }
 }
 
 template <mooutils::solution_set S, mooutils::is_or_has_objective_vector V>
 requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
-[[nodiscard]] constexpr auto dominates(S const& s, V const& v) -> bool {
+[[nodiscard]] constexpr auto dominates(S const& set, V const& v) -> bool {
   if constexpr (requires {
-                  { s.dominates(v) } -> std::same_as<bool>;
+                  { set.dominates(v) } -> std::same_as<bool>;
                 }) {
     // if the set has such a method call that method
-    s.dominates(v);
+    set.dominates(v);
   } else {
     // otherwise use a default implementation
     // TODO this can be improved
-    return weakly_dominates(s, v) && !weakly_dominates(v, s);
+    return weakly_dominates(set, v) && !weakly_dominates(v, set);
   }
 }
 
 template <mooutils::solution_set S, mooutils::is_or_has_objective_vector V>
 requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
-[[nodiscard]] constexpr auto strictly_dominates(S const& s, V const& v) -> bool {
+[[nodiscard]] constexpr auto strictly_dominates(S const& set, V const& v) -> bool {
   if constexpr (requires {
-                  { s.strictly_dominates(v) } -> std::same_as<bool>;
+                  { set.strictly_dominates(v) } -> std::same_as<bool>;
                 }) {
     // if the set has such a method call that method
-    s.strictly_dominates(v);
+    set.strictly_dominates(v);
   } else {
     // otherwise use a default implementation
-    return std::ranges::any_of(s, [&v](auto const& s) { return dominates(s, v); });
+    return std::ranges::any_of(set, [&v](auto const& s) { return dominates(s, v); });
   }
 }
 

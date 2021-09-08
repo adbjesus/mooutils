@@ -83,8 +83,8 @@ class random {
   using container_type = Container;
 
   explicit random(Rng&& rng)
-      : m_rng(std::move(rng))
-      , m_container() {}
+      : m_container()
+      , m_rng(std::move(rng)) {}
 
   // Remove and return the next solution in the queue.
   //

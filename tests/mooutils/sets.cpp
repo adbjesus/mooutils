@@ -21,10 +21,10 @@ template <std::floating_point T, typename Rng>
 auto generate_nondominated_points(size_t n, size_t m, Rng &rng) {
   std::normal_distribution<T> rnorm(0.0, 1.0);
   std::vector<std::vector<T>> pointset;
-  for (int i = 0; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
     std::vector<T> point;
     T sum = 0.0;
-    for (int j = 0; j < m; j++) {
+    for (size_t j = 0; j < m; j++) {
       point.push_back(rnorm(rng));
       sum += point[j] * point[j];
     }
@@ -131,9 +131,8 @@ TEMPLATE_LIST_TEST_CASE("sets with random solutions", "[sets][template]", sets_t
 // Equivalent solutions are unlikely to appear in the random case, so
 // this is a test to force it.
 TEMPLATE_LIST_TEST_CASE("sets with equivalent solutions", "[sets][template]", sets_types) {
-  size_t n = GENERATE(10, 100, 1000);
-  size_t m = GENERATE(2, 3, 5, 7);
-  double p = GENERATE(0.3, 0.5, 0.7);
+  size_t n = GENERATE(size_t(10), 100, 1000);
+  size_t m = GENERATE(size_t(2), 3, 5, 7);
   auto solutions = std::vector<solution_type>();
   solutions.reserve(n);
   // Consider a list of equivalent (but not equal) solutions.

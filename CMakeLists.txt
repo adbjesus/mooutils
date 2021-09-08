@@ -10,6 +10,31 @@ project(MOOUTILS
   LANGUAGES CXX
 )
 
+# Set warning flags
+if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+  set(MOOUTILS_CXX_WARN_FLAGS /W4)
+else()
+  # TODO check if these all work in clang, or if we want different ones
+  set(MOOUTILS_CXX_WARN_FLAGS
+    -Wall
+    -Wextra
+    -Wpedantic
+    -pedantic-errors
+    -Wold-style-cast
+    -Wundef
+    -Wredundant-decls
+    -Wcast-qual
+    -Wmissing-include-dirs
+    -Wdisabled-optimization
+    -Wconversion
+    -Wdouble-promotion
+    -Wvector-operation-performance
+    -Wshadow
+    -Wnull-dereference
+    -Wduplicated-cond
+  )
+endif ()
+
 # Project options
 # By default build apps and documentation
 option(MOOUTILS_BUILD_APPS "Build the apps." ON)
@@ -70,3 +95,34 @@ endif()
 if(MOOUTILS_BUILD_BENCHES)
   # TODO add_subdirectory(benches)
 endif()
+
+# Export
+install(TARGETS mooutils
+        EXPORT mooutils-targets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        )
+
+install(EXPORT mooutils-targets
+        NAMESPACE mooutils::
+        FILE mooutils-targets.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mooutils
+        )
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(${PROJECT_SOURCE_DIR}/cmake/mooutils-config.cmake.in
+  "${PROJECT_BINARY_DIR}/mooutils-config.cmake"
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mooutils
+)
+write_basic_package_version_file(
+  "${PROJECT_BINARY_DIR}/mooutils-config-version.cmake"
+  VERSION "${PROJECT_VERSION}"
+  COMPATIBILITY SameMinorVersion
+  )
+
+install(FILES ${PROJECT_BINARY_DIR}/mooutils-config.cmake
+              ${PROJECT_BINARY_DIR}/mooutils-config-version.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mooutils
+        )
