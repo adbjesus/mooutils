@@ -2,9 +2,9 @@
 
 #include <fmt/core.h>
 #include <fmt/ranges.h>
-#include <moutils/util/dominance.hpp>
-#include <moutils/util/solution.hpp>
-#include <moutils/util/solution_sets.hpp>
+#include <mooutils/util/dominance.hpp>
+#include <mooutils/util/solution.hpp>
+#include <mooutils/util/solution_sets.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -56,9 +56,9 @@ auto filter_nondominated_points(R const &r) {
   for (auto it = first; it != last; ++it) {
     auto dominated =
         std::any_of(first, it,
-                    [it](auto const &p) { return moutils::dominates(p, *it) || p == *it; }) ||
+                    [it](auto const &p) { return mooutils::dominates(p, *it) || p == *it; }) ||
         std::any_of(std::next(it), last,
-                    [it](auto const &p) { return moutils::dominates(p, *it); });
+                    [it](auto const &p) { return mooutils::dominates(p, *it); });
     if (!dominated) {
       aux.emplace_back(*it);
     }
@@ -70,12 +70,12 @@ using data_type = double;
 using dvec_type = std::array<size_t, 1>;
 using ovec_type = std::vector<data_type>;
 using cvec_type = std::array<size_t, 0>;
-using solution_type = moutils::solution<dvec_type, ovec_type, cvec_type>;
+using solution_type = mooutils::solution<dvec_type, ovec_type, cvec_type>;
 using nd_solution_multiset_types =
-    std::tuple<moutils::solution_sets::multivector<solution_type>,
-               moutils::solution_sets::sorted_multivector<solution_type>,
-               moutils::solution_sets::sorted_multilist<solution_type>,
-               moutils::solution_sets::sorted_multiset<solution_type>>;
+    std::tuple<mooutils::solution_sets::multivector<solution_type>,
+               mooutils::solution_sets::sorted_multivector<solution_type>,
+               mooutils::solution_sets::sorted_multilist<solution_type>,
+               mooutils::solution_sets::sorted_multiset<solution_type>>;
 
 TEMPLATE_LIST_TEST_CASE("nd_solution_multiset with random solutions", "[nd_solution_set][template]",
                         nd_solution_multiset_types) {

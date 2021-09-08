@@ -1,11 +1,11 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
-#include <moutils/problems/mobkp.hpp>
-#include <moutils/util/dominance.hpp>
-#include <moutils/util/indicators/hypervolume.hpp>
-#include <moutils/util/solution.hpp>
-#include <moutils/util/solution_queues.hpp>
-#include <moutils/util/solution_sets.hpp>
+#include <mooutils/problems/mobkp.hpp>
+#include <mooutils/util/dominance.hpp>
+#include <mooutils/util/indicators/hypervolume.hpp>
+#include <mooutils/util/solution.hpp>
+#include <mooutils/util/solution_queues.hpp>
+#include <mooutils/util/solution_sets.hpp>
 
 #include <array>
 #include <chrono>
@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
 
   using data_type = double;
 
-  auto const problem = moutils::problems::mobkp<data_type>(is);
+  auto const problem = mooutils::problems::mobkp<data_type>(is);
   auto const n = problem.num_items();
   auto const m = problem.num_objectives();
 
@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
   auto start = std::chrono::high_resolution_clock::now();
 
   auto refp = std::array<data_type, 2>{0.0, 0.0};
-  auto hv = moutils::indicators::hypervolume<data_type, 2>(refp);
+  auto hv = mooutils::indicators::hypervolume<data_type, 2>(refp);
   auto iter = 0;
 
   auto elapsed = [&start]() {
@@ -44,13 +44,13 @@ int main(int argc, char** argv) {
   using dvec_type = std::vector<bool>;
   using ovec_type = std::array<data_type, 2>;
   using cvec_type = std::array<data_type, 1>;
-  using solution_type = moutils::solution<dvec_type, ovec_type, cvec_type>;
+  using solution_type = mooutils::solution<dvec_type, ovec_type, cvec_type>;
 
-  auto solutions = moutils::solution_sets::multivector<solution_type>();
+  auto solutions = mooutils::solution_sets::multivector<solution_type>();
 
   using rng_type = std::mt19937_64;
   auto rng = rng_type(2);  // std::random_device()());
-  auto unexplored = moutils::solution_queues::random<solution_type, rng_type>(std::move(rng));
+  auto unexplored = mooutils::solution_queues::random<solution_type, rng_type>(std::move(rng));
 
   auto initial_dvec = dvec_type(n, false);
   auto initial_ovec = ovec_type{0.0, 0.0};
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
         new_ovec[j] += *it;
       }
 
-      if (!moutils::strictly_dominates(solutions, new_ovec)) {
+      if (!mooutils::strictly_dominates(solutions, new_ovec)) {
         auto new_dvec = dvec;
         auto new_cvec = cvec;
         new_cvec[0] += problem.item_weight(i, 0);
@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
           }
         }
 
-        if (!moutils::strictly_dominates(solutions, new_ovec)) {
+        if (!mooutils::strictly_dominates(solutions, new_ovec)) {
           auto new_dvec = dvec;
           new_dvec[i] = !dvec[i];
           new_dvec[j] = !dvec[j];

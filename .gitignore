@@ -1,4 +1,5 @@
 build/
+result
 .cache/
 .direnv/
 .envrc

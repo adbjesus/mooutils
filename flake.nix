@@ -1,5 +1,5 @@
 {
-  description = "moutils";
+  description = "mooutils";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs";
@@ -10,14 +10,14 @@
     flake-utils.lib.eachDefaultSystem (system:
       let pkgs = import nixpkgs { inherit system; };
       in rec {
-        packages.moutils = pkgs.stdenv.mkDerivation {
-          pname = "moutils";
+        packages.mooutils = pkgs.stdenv.mkDerivation {
+          pname = "mooutils";
           version = "0.1.0";
           src = self;
           nativeBuildInputs = with pkgs; [ cmake ninja ];
           buildInputs = with pkgs; [ fmt_8 catch2 ];
         };
-        defaultPackage = self.packages.${system}.moutils;
+        defaultPackage = self.packages.${system}.mooutils;
         # devShell = pkgs.mkShell { buildInputs = with pkgs; [ gcc meson ]; };
       });
 }

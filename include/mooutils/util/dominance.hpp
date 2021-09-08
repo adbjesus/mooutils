@@ -1,13 +1,13 @@
 #pragma once
 
-#include <moutils/util/concepts.hpp>
-#include <moutils/util/solution.hpp>
+#include <mooutils/util/concepts.hpp>
+#include <mooutils/util/solution.hpp>
 
 #include <algorithm>
 #include <cassert>
 #include <iterator>
 
-namespace moutils {
+namespace mooutils {
 
 // TODO add dominance relations with custom dominance order (currently assumes maximizing)
 // TODO add execution policy
@@ -27,7 +27,7 @@ template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator 
 // Check if vector `v1` and `v2` are equivalent.
 //
 // Undefined behavior if `v1` and `v2` have different sizes.
-template <moutils::is_or_has_objective_vector V1, moutils::is_or_has_objective_vector V2>
+template <mooutils::is_or_has_objective_vector V1, mooutils::is_or_has_objective_vector V2>
 [[nodiscard]] constexpr auto equivalent(V1 const& v1, V2 const& v2) noexcept -> bool {
   auto const& ov1 = get_objective_vector(v1);
   auto const& ov2 = get_objective_vector(v2);
@@ -47,7 +47,7 @@ template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator 
 // Check if a vector `v1` weakly dominates a vector `v2`.
 //
 // Undefined behavior if `v1` and `v2` have different sizes.
-template <moutils::is_or_has_objective_vector V1, moutils::is_or_has_objective_vector V2>
+template <mooutils::is_or_has_objective_vector V1, mooutils::is_or_has_objective_vector V2>
 [[nodiscard]] constexpr auto weakly_dominates(V1 const& v1, V2 const& v2) noexcept -> bool {
   auto const& ov1 = get_objective_vector(v1);
   auto const& ov2 = get_objective_vector(v2);
@@ -69,7 +69,7 @@ template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator 
 // Check if a vector `v1` dominates a vector `v2`.
 //
 // Undefined behavior if `v1` and `v2` have different sizes.
-template <moutils::is_or_has_objective_vector V1, moutils::is_or_has_objective_vector V2>
+template <mooutils::is_or_has_objective_vector V1, mooutils::is_or_has_objective_vector V2>
 [[nodiscard]] constexpr auto dominates(V1 const& v1, V2 const& v2) noexcept -> bool {
   auto const& ov1 = get_objective_vector(v1);
   auto const& ov2 = get_objective_vector(v2);
@@ -89,7 +89,7 @@ template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator 
 // Check if a vector `v1` strictly dominates a vector `v2`.
 //
 // Undefined behavior if `v1` and `v2` have different sizes.
-template <moutils::is_or_has_objective_vector V1, moutils::is_or_has_objective_vector V2>
+template <mooutils::is_or_has_objective_vector V1, mooutils::is_or_has_objective_vector V2>
 [[nodiscard]] constexpr auto strictly_dominates(V1 const& v1, V2 const& v2) noexcept -> bool {
   auto const& ov1 = get_objective_vector(v1);
   auto const& ov2 = get_objective_vector(v2);
@@ -113,7 +113,7 @@ template <std::input_iterator I1, std::sentinel_for<I1> S1,  // noformat
 // Check if vector `v1` and `v2` are incomparable.
 //
 // Undefined behavior if `v1` and `v2` have different sizes.
-template <moutils::is_or_has_objective_vector V1, moutils::is_or_has_objective_vector V2>
+template <mooutils::is_or_has_objective_vector V1, mooutils::is_or_has_objective_vector V2>
 [[nodiscard]] constexpr auto incomparable(V1 const& v1, V2 const& v2) noexcept -> bool {
   auto const& ov1 = get_objective_vector(v1);
   auto const& ov2 = get_objective_vector(v2);
@@ -123,8 +123,8 @@ template <moutils::is_or_has_objective_vector V1, moutils::is_or_has_objective_v
 
 /* Dominance relations between an objective vector and a set */
 
-template <moutils::is_or_has_objective_vector V, moutils::solution_set S>
-requires moutils::is_or_has_objective_vector<moutils::solution_t<S>>
+template <mooutils::is_or_has_objective_vector V, mooutils::solution_set S>
+requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
 [[nodiscard]] constexpr auto weakly_dominates(V const& v, S const& s) -> bool {
   if constexpr (requires {
                   { s.weakly_dominated(v) } -> std::same_as<bool>;
@@ -137,8 +137,8 @@ requires moutils::is_or_has_objective_vector<moutils::solution_t<S>>
   }
 }
 
-template <moutils::is_or_has_objective_vector V, moutils::solution_set S>
-requires moutils::is_or_has_objective_vector<moutils::solution_t<S>>
+template <mooutils::is_or_has_objective_vector V, mooutils::solution_set S>
+requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
 [[nodiscard]] constexpr auto dominates(V const& v, S const& s) -> bool {
   if constexpr (requires {
                   { s.dominated(v) } -> std::same_as<bool>;
@@ -161,8 +161,8 @@ requires moutils::is_or_has_objective_vector<moutils::solution_t<S>>
 }
 
 // For every solution
-template <moutils::is_or_has_objective_vector V, moutils::solution_set S>
-requires moutils::is_or_has_objective_vector<moutils::solution_t<S>>
+template <mooutils::is_or_has_objective_vector V, mooutils::solution_set S>
+requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
 [[nodiscard]] constexpr auto strictly_dominates(V const& v, S const& s) -> bool {
   if constexpr (requires {
                   { s.strictly_dominated(v) } -> std::same_as<bool>;
@@ -177,8 +177,8 @@ requires moutils::is_or_has_objective_vector<moutils::solution_t<S>>
 
 /* Dominance relations between a set and and an objective vector */
 
-template <moutils::solution_set S, moutils::is_or_has_objective_vector V>
-requires moutils::is_or_has_objective_vector<moutils::solution_t<S>>
+template <mooutils::solution_set S, mooutils::is_or_has_objective_vector V>
+requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
 [[nodiscard]] constexpr auto weakly_dominates(S const& s, V const& v) -> bool {
   if constexpr (requires {
                   { s.weakly_dominates(v) } -> std::same_as<bool>;
@@ -191,8 +191,8 @@ requires moutils::is_or_has_objective_vector<moutils::solution_t<S>>
   }
 }
 
-template <moutils::solution_set S, moutils::is_or_has_objective_vector V>
-requires moutils::is_or_has_objective_vector<moutils::solution_t<S>>
+template <mooutils::solution_set S, mooutils::is_or_has_objective_vector V>
+requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
 [[nodiscard]] constexpr auto dominates(S const& s, V const& v) -> bool {
   if constexpr (requires {
                   { s.dominates(v) } -> std::same_as<bool>;
@@ -206,8 +206,8 @@ requires moutils::is_or_has_objective_vector<moutils::solution_t<S>>
   }
 }
 
-template <moutils::solution_set S, moutils::is_or_has_objective_vector V>
-requires moutils::is_or_has_objective_vector<moutils::solution_t<S>>
+template <mooutils::solution_set S, mooutils::is_or_has_objective_vector V>
+requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
 [[nodiscard]] constexpr auto strictly_dominates(S const& s, V const& v) -> bool {
   if constexpr (requires {
                   { s.strictly_dominates(v) } -> std::same_as<bool>;
@@ -236,4 +236,4 @@ concept dominance_comparable = requires(T const& t, U const& u) {
   {incomparable(u, t)};
 };
 
-}  // namespace moutils
+}  // namespace mooutils

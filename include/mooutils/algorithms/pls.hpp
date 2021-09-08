@@ -1,8 +1,8 @@
 #pragma once
 
-#include <moutils/util/solution.hpp>
-#include <moutils/util/solution_queues.hpp>
-#include <moutils/util/solution_sets.hpp>
+#include <mooutils/util/solution.hpp>
+#include <mooutils/util/solution_queues.hpp>
+#include <mooutils/util/solution_sets.hpp>
 
 #include <deque>
 #include <set>
@@ -10,13 +10,13 @@
 #include <utility>
 #include <vector>
 
-namespace moutils::algorithms {
+namespace mooutils::algorithms {
 
 template <typename Problem,   // noformat
           typename Solution,  // noformat
-          typename SolutionQueue = moutils::solution_queues::fifo<Solution>,
+          typename SolutionQueue = mooutils::solution_queues::fifo<Solution>,
           typename SolutionSet =
-              moutils::solution_sets::multivector<std::reference_wrapper<const Solution>>>
+              mooutils::solution_sets::multivector<std::reference_wrapper<const Solution>>>
 class pls {
  public:
   using problem_type = Problem;
@@ -58,4 +58,4 @@ class pls {
   solution_set_type solutions;
 };
 
-}  // namespace moutils::algorithms
+}  // namespace mooutils::algorithms

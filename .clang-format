@@ -13,7 +13,7 @@ IncludeBlocks: Regroup
 IncludeCategories:
   - Regex:           '^(<|")catch2/'
     Priority:        1
-  - Regex:           '^(<|")moutils/'
+  - Regex:           '^(<|")mooutils/'
     Priority:        2
   - Regex:           '<[[:alnum:]_]+>'
     Priority:        4

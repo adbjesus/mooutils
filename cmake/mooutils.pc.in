@@ -1,0 +1,7 @@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+
+Name: mooutils
+Description: Multi-objective optimization utilities
+URL: https://github.com/adbjesus/mooutils
+Version: @MOOUTILS_VERSION@
+Cflags: -I${includedir}
