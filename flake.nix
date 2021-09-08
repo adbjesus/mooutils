@@ -15,7 +15,7 @@
           version = "0.1.0";
           src = self;
           nativeBuildInputs = with pkgs; [ cmake ninja ];
-          buildInputs = with pkgs; [ glpk fmt_8 catch2 nodejs ];
+          buildInputs = with pkgs; [ fmt_8 catch2 ];
         };
         defaultPackage = self.packages.${system}.moutils;
         # devShell = pkgs.mkShell { buildInputs = with pkgs; [ gcc meson ]; };
