@@ -1,8 +1,8 @@
 #pragma once
 
-#include <mooutils/util/concepts.hpp>
-#include <mooutils/util/dominance.hpp>
-#include <mooutils/util/solution.hpp>
+#include <mooutils/concepts.hpp>
+#include <mooutils/dominance.hpp>
+#include <mooutils/solution.hpp>
 
 #include <concepts>
 #include <iostream>
@@ -12,7 +12,7 @@
 #include <set>
 #include <vector>
 
-namespace mooutils::solution_sets {
+namespace mooutils::sets {
 
 /// Attempts to insert a new solution into a set. If this solution is
 /// equal to or dominated by a solution in the set, then this solution
@@ -157,6 +157,7 @@ class multivector {
   container_type m_container;
 };
 
+// TODO move this to a better place
 template <typename Lhs, typename Rhs = Lhs>
 requires mooutils::is_or_has_objective_vector<Lhs> && mooutils::is_or_has_objective_vector<Rhs>
 struct lexicographical_greater {
@@ -491,4 +492,4 @@ class sorted_multiset {
   container_type m_container;
 };
 
-}  // namespace mooutils::solution_sets
+}  // namespace mooutils::sets

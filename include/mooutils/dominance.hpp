@@ -1,7 +1,7 @@
 #pragma once
 
-#include <mooutils/util/concepts.hpp>
-#include <mooutils/util/solution.hpp>
+#include <mooutils/concepts.hpp>
+#include <mooutils/solution.hpp>
 
 #include <algorithm>
 #include <cassert>

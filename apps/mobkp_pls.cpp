@@ -1,11 +1,12 @@
+#include <mooutils/dominance.hpp>
+#include <mooutils/indicators.hpp>
+#include <mooutils/problems/mobkp.hpp>
+#include <mooutils/queues.hpp>
+#include <mooutils/sets.hpp>
+#include <mooutils/solution.hpp>
+
 #include <fmt/core.h>
 #include <fmt/ranges.h>
-#include <mooutils/problems/mobkp.hpp>
-#include <mooutils/util/dominance.hpp>
-#include <mooutils/util/indicators/hypervolume.hpp>
-#include <mooutils/util/solution.hpp>
-#include <mooutils/util/solution_queues.hpp>
-#include <mooutils/util/solution_sets.hpp>
 
 #include <array>
 #include <chrono>
@@ -46,11 +47,11 @@ int main(int argc, char** argv) {
   using cvec_type = std::array<data_type, 1>;
   using solution_type = mooutils::solution<dvec_type, ovec_type, cvec_type>;
 
-  auto solutions = mooutils::solution_sets::multivector<solution_type>();
+  auto solutions = mooutils::sets::multivector<solution_type>();
 
   using rng_type = std::mt19937_64;
   auto rng = rng_type(2);  // std::random_device()());
-  auto unexplored = mooutils::solution_queues::random<solution_type, rng_type>(std::move(rng));
+  auto unexplored = mooutils::queues::random<solution_type, rng_type>(std::move(rng));
 
   auto initial_dvec = dvec_type(n, false);
   auto initial_ovec = ovec_type{0.0, 0.0};

@@ -1,10 +1,11 @@
 #include <catch2/catch.hpp>
 
+#include <mooutils/dominance.hpp>
+#include <mooutils/sets.hpp>
+#include <mooutils/solution.hpp>
+
 #include <fmt/core.h>
 #include <fmt/ranges.h>
-#include <mooutils/util/dominance.hpp>
-#include <mooutils/util/solution.hpp>
-#include <mooutils/util/solution_sets.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -71,14 +72,12 @@ using dvec_type = std::array<size_t, 1>;
 using ovec_type = std::vector<data_type>;
 using cvec_type = std::array<size_t, 0>;
 using solution_type = mooutils::solution<dvec_type, ovec_type, cvec_type>;
-using nd_solution_multiset_types =
-    std::tuple<mooutils::solution_sets::multivector<solution_type>,
-               mooutils::solution_sets::sorted_multivector<solution_type>,
-               mooutils::solution_sets::sorted_multilist<solution_type>,
-               mooutils::solution_sets::sorted_multiset<solution_type>>;
+using sets_types = std::tuple<mooutils::sets::multivector<solution_type>,
+                              mooutils::sets::sorted_multivector<solution_type>,
+                              mooutils::sets::sorted_multilist<solution_type>,
+                              mooutils::sets::sorted_multiset<solution_type>>;
 
-TEMPLATE_LIST_TEST_CASE("nd_solution_multiset with random solutions", "[nd_solution_set][template]",
-                        nd_solution_multiset_types) {
+TEMPLATE_LIST_TEST_CASE("sets with random solutions", "[sets][template]", sets_types) {
   std::random_device rd("/dev/urandom");
   std::mt19937 rng(rd());
 
@@ -131,8 +130,7 @@ TEMPLATE_LIST_TEST_CASE("nd_solution_multiset with random solutions", "[nd_solut
 
 // Equivalent solutions are unlikely to appear in the random case, so
 // this is a test to force it.
-TEMPLATE_LIST_TEST_CASE("nd_solution_multiset with equivalent", "[nd_solution_set][template]",
-                        nd_solution_multiset_types) {
+TEMPLATE_LIST_TEST_CASE("sets with equivalent solutions", "[sets][template]", sets_types) {
   size_t n = GENERATE(10, 100, 1000);
   size_t m = GENERATE(2, 3, 5, 7);
   double p = GENERATE(0.3, 0.5, 0.7);

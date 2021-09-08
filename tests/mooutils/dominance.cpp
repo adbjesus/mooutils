@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include <mooutils/util/dominance.hpp>
+#include <mooutils/dominance.hpp>
 
 // TODO rapidcheck (or similar) for random/property test cases
 

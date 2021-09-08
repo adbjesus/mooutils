@@ -3,9 +3,9 @@ find_package(fmt REQUIRED)
 
 add_executable(mooutils_tester
   main.cpp
-  mooutils/util/dominance.cpp
-  mooutils/util/solution_sets.cpp
-  mooutils/util/solution_queues.cpp
+  mooutils/dominance.cpp
+  mooutils/sets.cpp
+  mooutils/queues.cpp
   mooutils/problems/mobkp.cpp
 )
 target_link_libraries(mooutils_tester Catch2::Catch2)
