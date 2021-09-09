@@ -15,7 +15,7 @@
           version = "0.1.0";
           src = self;
           nativeBuildInputs = with pkgs; [ cmake ninja ];
-          buildInputs = with pkgs; [ fmt_8 catch2 ];
+          buildInputs = with pkgs; [ fmt_8 catch2 boost175 ];
         };
         defaultPackage = self.packages.${system}.mooutils;
         # devShell = pkgs.mkShell { buildInputs = with pkgs; [ gcc meson ]; };

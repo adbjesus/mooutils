@@ -25,8 +25,8 @@ class [[nodiscard]] hypervolume {
   static_assert(N > 1);
 
  public:
-  using hv_type = T;
-  using ovec_type = std::array<hv_type, N>;
+  using value_type = T;
+  using ovec_type = std::array<value_type, N>;
   using set_type = std::vector<ovec_type>;
 
   constexpr explicit hypervolume(ovec_type const& r)
@@ -131,7 +131,7 @@ class [[nodiscard]] hypervolume {
 
   template <typename V, typename R>
   auto m_point_hv(V const& v, R const& r) const {
-    hv_type res{1};
+    value_type res{1};
     for (size_t i = 0; i < v.size(); ++i) {
       res *= v[i] - r[i];
     }
@@ -140,14 +140,14 @@ class [[nodiscard]] hypervolume {
 
   template <typename S, typename R>
   auto m_set_hv3d(S const& s, R const& r) const {
-    using array2_t = std::array<hv_type, 2>;
+    using array2_t = std::array<value_type, 2>;
 
-    auto aux = std::vector<array2_t>{{r[1], std::numeric_limits<hv_type>::max()},
-                                     {std::numeric_limits<hv_type>::max(), r[2]}};
+    auto aux = std::vector<array2_t>{{r[1], std::numeric_limits<value_type>::max()},
+                                     {std::numeric_limits<value_type>::max(), r[2]}};
 
-    hv_type v = 0;
-    hv_type a = 0;
-    hv_type z = 0;
+    value_type v = 0;
+    value_type a = 0;
+    value_type z = 0;
 
     for (auto const& p : s) {
       v += a * (z - p[0]);
@@ -179,15 +179,15 @@ class [[nodiscard]] hypervolume {
 
   // Assumes set is sorted by increasing i
   template <std::size_t I, typename S, typename R>
-  auto m_set_hv(S const& s, R const& r, hv_type c = 1) const -> hv_type {
-    hv_type v = 0;
+  auto m_set_hv(S const& s, R const& r, value_type c = 1) const -> value_type {
+    value_type v = 0;
 
     if (s.size() == 0) {
       return 0;
     }
 
     if constexpr (I == 2) {
-      hv_type r1 = r[1];
+      value_type r1 = r[1];
       for (auto const& p : s) {
         v += (p[1] - r1) * (p[0] - r[0]);
         r1 = p[1];
@@ -196,15 +196,15 @@ class [[nodiscard]] hypervolume {
     } else if constexpr (I == 3) {
       v = c * m_set_hv3d(s, r);
     } else {
-      auto newr = std::array<hv_type, I - 1>{};
+      auto newr = std::array<value_type, I - 1>{};
       for (size_t i = 1; i < I; ++i) {
         newr[i - 1] = r[i];
       }
-      auto newl = std::vector<std::array<hv_type, I - 1>>();
+      auto newl = std::vector<std::array<value_type, I - 1>>();
       newl.reserve(s.size());
       for (auto&& p : s) {
         auto newc = c * (p[0] - r[0]);
-        auto newp = std::array<hv_type, I - 1>{};
+        auto newp = std::array<value_type, I - 1>{};
         for (size_t i = 1; i < I; ++i) {
           newp[i - 1] = p[i];
         }
@@ -217,7 +217,7 @@ class [[nodiscard]] hypervolume {
     return v;
   }
 
-  hv_type m_hv;
+  value_type m_hv;
   set_type m_set;
   ovec_type m_ref;
 };
@@ -231,8 +231,8 @@ class [[nodiscard]] hypervolume<T, 2> {
   };
 
  public:
-  using hv_type = T;
-  using ovec_type = std::array<hv_type, 2>;
+  using value_type = T;
+  using ovec_type = std::array<value_type, 2>;
   using set_type = std::set<ovec_type, Cmp>;
 
   constexpr explicit hypervolume(ovec_type const& r)
@@ -250,17 +250,17 @@ class [[nodiscard]] hypervolume<T, 2> {
 
   // Get the contribution of a new vector w.r.t. to the current set
   template <typename V>
-  [[nodiscard]] constexpr auto contribution(V const& v) const -> hv_type {
+  [[nodiscard]] constexpr auto contribution(V const& v) const -> value_type {
     assert(v.size() == 2);
-    hv_type res = 0;
+    value_type res = 0;
     auto it = m_set.lower_bound(v);
-    hv_type r0 = it != m_set.begin() ? (*std::prev(it))[0] : m_ref[0];
+    value_type r0 = it != m_set.begin() ? (*std::prev(it))[0] : m_ref[0];
 
     if ((v[1] == (*it)[1] && v[0] <= (*it)[0]) || v[0] <= r0) {
       return 0;
     }
 
-    hv_type v1 = v[1];
+    value_type v1 = v[1];
     for (; it != m_set.end() && (*it)[0] <= v[0]; ++it) {
       res += (v[0] - r0) * (v1 - (*it)[1]);
       r0 = (*it)[0];
@@ -276,18 +276,18 @@ class [[nodiscard]] hypervolume<T, 2> {
 
   // Inserts a new objective vector and returns its contribution
   template <typename V>
-  constexpr auto insert(V&& v) -> hv_type {
+  constexpr auto insert(V&& v) -> value_type {
     assert(v.size() == 2);
-    hv_type hvc = 0;
+    value_type hvc = 0;
 
     auto it = m_set.lower_bound(v);
-    hv_type r0 = it != m_set.begin() ? (*std::prev(it))[0] : m_ref[0];
+    value_type r0 = it != m_set.begin() ? (*std::prev(it))[0] : m_ref[0];
 
     if ((v[1] == (*it)[1] && v[0] <= (*it)[0]) || v[0] <= r0) {
       return 0;
     }
 
-    hv_type v1 = v[1];
+    value_type v1 = v[1];
     auto jt = it;
     for (; jt != m_set.end() && (*jt)[0] <= v[0]; ++jt) {
       hvc += (v[0] - r0) * (v1 - (*jt)[1]);
@@ -309,7 +309,7 @@ class [[nodiscard]] hypervolume<T, 2> {
   }
 
  private:
-  hv_type m_hv;
+  value_type m_hv;
   set_type m_set;
   ovec_type m_ref;
 };
@@ -341,8 +341,8 @@ class [[nodiscard]] hypervolume<T, 3> {
   };
 
  public:
-  using hv_type = T;
-  using ovec_type = std::array<hv_type, 3>;
+  using value_type = T;
+  using ovec_type = std::array<value_type, 3>;
   using set_type = Point*;
 
   constexpr explicit hypervolume(ovec_type const& r)
@@ -379,7 +379,7 @@ class [[nodiscard]] hypervolume<T, 3> {
 
   // Get the contribution of a new vector w.r.t. to the current set
   template <typename V>
-  [[nodiscard]] constexpr auto contribution(V const& u) const -> hv_type {
+  [[nodiscard]] constexpr auto contribution(V const& u) const -> value_type {
     // Check if u is dominated by any point in q
     for (auto it = m_set; it != NULL && it->z >= u[2]; it = it->next) {
       if (it->x >= u[0] && it->y >= u[1]) {
@@ -418,8 +418,8 @@ class [[nodiscard]] hypervolume<T, 3> {
       p->lnext = sn;
     }
 
-    auto compute_area_from_prev = [](hv_type x, hv_type y, Point* cprev) {
-      hv_type a = 0;
+    auto compute_area_from_prev = [](value_type x, value_type y, Point* cprev) {
+      value_type a = 0;
       auto rx = cprev->x;
       auto ry = y;
       auto it = cprev->lnext;
@@ -432,8 +432,8 @@ class [[nodiscard]] hypervolume<T, 3> {
       return a;
     };
 
-    auto compute_area_from_next = [](hv_type x, hv_type y, Point* cnext) {
-      hv_type a = 0;
+    auto compute_area_from_next = [](value_type x, value_type y, Point* cnext) {
+      value_type a = 0;
       auto rx = x;
       auto ry = cnext->y;
       auto it = cnext->lprev;
@@ -447,14 +447,14 @@ class [[nodiscard]] hypervolume<T, 3> {
     };
 
     // Find area contribution
-    hv_type a = compute_area_from_prev(u[0], u[1], cprev);
+    value_type a = compute_area_from_prev(u[0], u[1], cprev);
 
-    hv_type v = 0;
+    value_type v = 0;
     auto z = u[2];
     for (; p != NULL && (p->x < u[0] || p->y < u[1]); p = p->next) {
       v += a * (z - p->z);
       z = p->z;
-      hv_type ac = 0;
+      value_type ac = 0;
       if (p->y >= u[1] && p->x >= cprev->x) {
         ac = compute_area_from_next(p->x, u[1], p->cnext);
         cprev = p;
@@ -487,7 +487,7 @@ class [[nodiscard]] hypervolume<T, 3> {
 
   // Inserts a new objective vector and returns its contribution
   template <typename V>
-  constexpr auto insert(V const& p) -> hv_type {
+  constexpr auto insert(V const& p) -> value_type {
     auto hvc = contribution(p);
     if (hvc == 0) {
       return 0;
@@ -573,7 +573,7 @@ class [[nodiscard]] hypervolume<T, 3> {
     return (a->z > b->z || (a->z == b->z && (a->y > b->y || (a->y == b->y && a->x >= b->x))));
   }
 
-  hv_type m_hv;
+  value_type m_hv;
   set_type m_set;
   ovec_type m_ref;
 };

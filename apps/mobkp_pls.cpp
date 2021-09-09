@@ -5,7 +5,9 @@
 #include <mooutils/sets.hpp>
 #include <mooutils/solution.hpp>
 
+#include <boost/multiprecision/cpp_int.hpp>
 #include <fmt/core.h>
+#include <fmt/ostream.h>
 #include <fmt/ranges.h>
 
 #include <array>
@@ -18,20 +20,23 @@ int main(int argc, char** argv) {
   auto is = std::ifstream(argv[1]);
   auto timeout = std::stod(argv[2]);
 
-  using data_type = double;
+  using data_type = uint_fast32_t;
+  using hv_data_type = boost::multiprecision::uint256_t;
+
+  constexpr size_t num_objectives = 2;
 
   auto const problem = mooutils::problems::mobkp<data_type>(is);
   auto const n = problem.num_items();
   auto const m = problem.num_objectives();
 
-  if (m != 2) {
+  if (m != num_objectives) {
     throw("Invalid number of objectives!");
   }
 
   auto start = std::chrono::high_resolution_clock::now();
 
-  auto refp = std::array<data_type, 2>{0.0, 0.0};
-  auto hv = mooutils::indicators::hypervolume<data_type, 2>(refp);
+  auto refp = std::array<hv_data_type, num_objectives>{0, 0};
+  auto hv = mooutils::indicators::hypervolume<hv_data_type, num_objectives>(refp);
   auto iter = 0;
 
   auto elapsed = [&start]() {
@@ -43,7 +48,7 @@ int main(int argc, char** argv) {
   };
 
   using dvec_type = std::vector<bool>;
-  using ovec_type = std::array<data_type, 2>;
+  using ovec_type = std::array<data_type, num_objectives>;
   using cvec_type = std::array<data_type, 1>;
   using solution_type = mooutils::solution<dvec_type, ovec_type, cvec_type>;
 
@@ -54,8 +59,8 @@ int main(int argc, char** argv) {
   auto unexplored = mooutils::queues::random<solution_type, rng_type>(std::move(rng));
 
   auto initial_dvec = dvec_type(n, false);
-  auto initial_ovec = ovec_type{0.0, 0.0};
-  auto initial_cvec = cvec_type{0.0};
+  auto initial_ovec = ovec_type{0, 0};
+  auto initial_cvec = cvec_type{0};
 
   auto initial = solution_type(std::move(initial_dvec),  // noformat
                                std::move(initial_ovec),  // noformat
@@ -65,7 +70,7 @@ int main(int argc, char** argv) {
   auto it = solutions.insert_unchecked(std::move(initial));
   unexplored.push(*it);
 
-  while (elapsed() < timeout && !unexplored.empty()) {
+  while (iter < timeout && !unexplored.empty()) {
     auto s = unexplored.pop();
     auto const& dvec = s.decision_vector();
     auto const& ovec = s.objective_vector();
@@ -108,7 +113,11 @@ int main(int argc, char** argv) {
           flip = true;
           unexplored.push(*it);
 
-          hv.insert(it->objective_vector());
+          std::array<hv_data_type, num_objectives> ov;
+          for (size_t k = 0; k < num_objectives; ++k) {
+            ov[k] = it->objective_vector()[k];
+          }
+          hv.insert(std::move(ov));
           register_time_and_hv();
         }
       }
@@ -164,7 +173,11 @@ int main(int argc, char** argv) {
           if (it != solutions.end()) {
             unexplored.push(*it);
 
-            hv.insert(it->objective_vector());
+            std::array<hv_data_type, num_objectives> ov;
+            for (size_t k = 0; k < num_objectives; ++k) {
+              ov[k] = it->objective_vector()[k];
+            }
+            hv.insert(std::move(ov));
             register_time_and_hv();
           }
         }
@@ -172,11 +185,15 @@ int main(int argc, char** argv) {
     }
   }
 
-  // for (auto const& s : solutions) {
-  //   fmt::print("{} ", fmt::join(s.objective_vector(), " "));
-  //   fmt::print("{} ", fmt::join(s.constraint_vector(), " "));
-  //   fmt::print("{}\n", fmt::join(s.decision_vector(), " "));
-  // }
+  fmt::print("{}\n", solutions.size());
+
+  for (auto const& s : solutions) {
+    fmt::print("{} ", fmt::join(s.objective_vector(), " "));
+    fmt::print("{} ", fmt::join(s.constraint_vector(), " "));
+    fmt::print("{:d}\n", fmt::join(s.decision_vector(), " "));
+  }
+
+  register_time_and_hv();
 
   return EXIT_SUCCESS;
 }
