@@ -78,7 +78,7 @@ install(FILES "${PROJECT_BINARY_DIR}/mooutils.pc" DESTINATION "${CMAKE_INSTALL_L
 
 # Define solver target
 if(MOOUTILS_BUILD_APPS)
-  add_subdirectory(apps)
+  # add_subdirectory(apps)
 endif()
 
 # Define docs target

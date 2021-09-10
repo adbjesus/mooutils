@@ -4,6 +4,7 @@ find_package(fmt REQUIRED)
 add_executable(mooutils_tester
   main.cpp
   mooutils/dominance.cpp
+  mooutils/indicators.cpp
   mooutils/sets.cpp
   mooutils/queues.cpp
   mooutils/problems/mobkp.cpp
