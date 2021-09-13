@@ -105,6 +105,10 @@ class multivector {
     return m_container.emplace(m_container.end(), std::forward<S>(solution));
   }
 
+  constexpr auto reserve(size_type n) {
+    m_container.reserve(n);
+  }
+
   constexpr auto erase(iterator it) {
     return m_container.erase(it);
   }
@@ -157,18 +161,7 @@ class multivector {
   container_type m_container;
 };
 
-// TODO move this to a better place
-template <typename Lhs, typename Rhs = Lhs>
-requires mooutils::is_or_has_objective_vector<Lhs> && mooutils::is_or_has_objective_vector<Rhs>
-struct lexicographical_greater {
-  auto operator()(Lhs const& lhs, Rhs const& rhs) const -> bool {
-    auto const& ovl = mooutils::get_objective_vector(lhs);
-    auto const& ovr = mooutils::get_objective_vector(rhs);
-    return std::ranges::lexicographical_compare(ovr, ovl);
-  }
-};
-
-template <typename Solution, typename Compare = lexicographical_greater<Solution>,
+template <typename Solution, typename Compare = lexicographically_greater<Solution>,
           typename Container = std::vector<Solution>>
 requires mooutils::dominance_comparable<Solution> &&
     std::same_as<Solution, typename Container::value_type>
@@ -226,6 +219,10 @@ class sorted_multivector {
     return m_container.emplace(mid, std::forward<S>(solution));
   }
 
+  constexpr auto reserve(size_type n) {
+    m_container.reserve(n);
+  }
+
   constexpr auto erase(iterator it) {
     return m_container.erase(it);
   }
@@ -278,7 +275,7 @@ class sorted_multivector {
   container_type m_container;
 };
 
-template <typename Solution, typename Compare = lexicographical_greater<Solution>,
+template <typename Solution, typename Compare = lexicographically_greater<Solution>,
           typename Container = std::list<Solution>>
 requires mooutils::dominance_comparable<Solution> &&
     std::same_as<Solution, typename Container::value_type>
@@ -389,7 +386,7 @@ class sorted_multilist {
   container_type m_container;
 };
 
-template <typename Solution, typename Compare = lexicographical_greater<Solution>,
+template <typename Solution, typename Compare = lexicographically_greater<Solution>,
           typename Container = std::multiset<Solution, Compare>>
 requires mooutils::dominance_comparable<Solution> &&
     std::same_as<Solution, typename Container::value_type>

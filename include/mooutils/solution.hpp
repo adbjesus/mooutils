@@ -105,27 +105,29 @@ auto get_constraint_vector(T const& t) -> decltype(t.constraint_vector()) {
 }
 
 // Takes a range of solutions and returns a view over the decision vectors
-template <mooutils::solution_set T>
-constexpr auto decision_vectors(T const& t) {
-  return std::views::transform(
-      t, [](auto const& s) -> decltype(s.decision_vector()) const& { return s.decision_vector(); });
+template <typename Set>
+requires solution_set<Set>
+constexpr auto decision_vectors(Set const& set) {
+  return std::views::transform(set, [](auto const& s) -> decltype(get_decision_vector(s)) const& {
+    return get_decision_vector(s);
+  });
 }
 
 // Takes a range of solutions and returns a view over the objective vectors
-// TODO use concept instead of typename
-template <typename T>
-constexpr auto objective_vectors(T const& t) {
-  return std::views::transform(t, [](auto const& s) -> decltype(s.objective_vector()) const& {
-    return s.objective_vector();
+template <typename Set>
+requires solution_set<Set>
+constexpr auto objective_vectors(Set const& set) {
+  return std::views::transform(set, [](auto const& s) -> decltype(get_objective_vector(s)) const& {
+    return get_objective_vector(s);
   });
 }
 
 // Takes a range of solutions and returns a view over the constraint vectors
-// TODO use concept instead of typename
-template <typename T>
-constexpr auto contraint_vectors(T const& t) {
-  return std::views::transform(t, [](auto const& s) -> decltype(s.contraint_vector()) const& {
-    return s.constraint_vector();
+template <typename Set>
+requires solution_set<Set>
+constexpr auto contraint_vectors(Set const& set) {
+  return std::views::transform(set, [](auto const& s) -> decltype(get_contraint_vector(s)) const& {
+    return get_constraint_vector(s);
   });
 }
 

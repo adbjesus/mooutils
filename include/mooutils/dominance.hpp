@@ -236,4 +236,14 @@ concept dominance_comparable = requires(T const& t, U const& u) {
   {incomparable(u, t)};
 };
 
+template <typename Lhs, typename Rhs = Lhs>
+requires mooutils::is_or_has_objective_vector<Lhs> && mooutils::is_or_has_objective_vector<Rhs>
+struct lexicographically_greater {
+  auto operator()(Lhs const& lhs, Rhs const& rhs) const -> bool {
+    auto const& ovl = mooutils::get_objective_vector(lhs);
+    auto const& ovr = mooutils::get_objective_vector(rhs);
+    return std::ranges::lexicographical_compare(ovr, ovl);
+  }
+};
+
 }  // namespace mooutils
