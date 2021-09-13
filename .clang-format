@@ -1,5 +1,5 @@
 BasedOnStyle: Google
-ColumnLimit: 100
+ColumnLimit: 120
 AllowAllConstructorInitializersOnNextLine: false
 AllowShortBlocksOnASingleLine: Always
 AllowShortCaseLabelsOnASingleLine: false
