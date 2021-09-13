@@ -1,7 +1,7 @@
 #pragma once
 
 #include <mooutils/concepts.hpp>
-#include <mooutils/dominance.hpp>
+#include <mooutils/orders.hpp>
 #include <mooutils/solution.hpp>
 
 #include <concepts>

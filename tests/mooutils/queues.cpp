@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include <mooutils/dominance.hpp>
+#include <mooutils/orders.hpp>
 #include <mooutils/queues.hpp>
 #include <mooutils/solution.hpp>
 
