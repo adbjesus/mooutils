@@ -89,9 +89,6 @@ TEST_CASE("set hv 2d properties", "[indicators][hv]") {
 
   auto const set = generate_nondominated_points<data_type, rng_type>(n, m, rng_type(seed), min_p, max_p);
 
-  using set_type = decltype(set);
-  using point_type = typename set_type::value_type;
-
   auto aux = set;
   std::ranges::sort(aux, mooutils::lexicographically_greater_fn{});
   auto const sorted_set = std::move(aux);
@@ -132,9 +129,6 @@ TEST_CASE("set hv 3d properties", "[indicators][hv]") {
 
   auto const set = generate_nondominated_points<data_type, rng_type>(n, m, rng_type(seed), min_p, max_p);
 
-  using set_type = decltype(set);
-  using point_type = typename set_type::value_type;
-
   auto aux = set;
   std::ranges::sort(aux, mooutils::lexicographically_greater_fn{});
   auto const sorted_set = std::move(aux);
@@ -174,9 +168,6 @@ TEST_CASE("set hv wfg properties", "[indicators][hv]") {
   auto seed = GENERATE_COPY(take(5, random(min_seed, max_seed)));
 
   auto const set = generate_nondominated_points<data_type, rng_type>(n, m, rng_type(seed), min_p, max_p);
-
-  using set_type = decltype(set);
-  using point_type = typename set_type::value_type;
 
   auto aux = set;
   std::ranges::sort(aux, mooutils::lexicographically_greater_fn{});

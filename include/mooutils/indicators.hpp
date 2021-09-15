@@ -167,8 +167,6 @@ struct hvwfg_fn {
       return c * hv3d<T>(set, r);
     } else {
       auto newr = std::vector<T>(r.begin() + 1, r.end());
-      using ov_type = std::ranges::range_value_t<S>;
-      using v_type = std::ranges::range_value_t<ov_type>;
       using new_ov_type = std::vector<T>;
       auto tmp = std::vector<new_ov_type>();
       tmp.reserve(set.size());
@@ -462,6 +460,35 @@ class [[nodiscard]] hv3dplus_container {
       }
     }
 
+    // Utilities functions (TODO maybe move them to class functions?)
+    auto compute_area_from_prev = [](value_type x, value_type y, Point* cprev) {
+      value_type a = 0;
+      auto rx = cprev->x;
+      auto ry = y;
+      auto it = cprev->lnext;
+      for (; it->x <= x; it = it->lnext) {
+        a += (x - rx) * (ry - it->y);
+        rx = it->x;
+        ry = it->y;
+      }
+      a += (x - rx) * (ry - it->y);
+      return a;
+    };
+
+    auto compute_area_from_next = [](value_type x, value_type y, Point* cnext) {
+      value_type a = 0;
+      auto rx = x;
+      auto ry = cnext->y;
+      auto it = cnext->lprev;
+      for (; it->y <= y; it = it->lprev) {
+        a += (rx - it->x) * (y - ry);
+        rx = it->x;
+        ry = it->y;
+      }
+      a += (rx - it->x) * (y - ry);
+      return a;
+    };
+
     // Find outer delimeters
     Point* cprev = m_set;
     Point* cnext = m_set->next;
@@ -493,43 +520,14 @@ class [[nodiscard]] hv3dplus_container {
       p->lnext = sn;
     }
 
-    auto compute_area_from_prev = [](value_type x, value_type y, Point* cprev) {
-      value_type a = 0;
-      auto rx = cprev->x;
-      auto ry = y;
-      auto it = cprev->lnext;
-      for (; it->x <= x; it = it->lnext) {
-        a += (x - rx) * (ry - it->y);
-        rx = it->x;
-        ry = it->y;
-      }
-      a += (x - rx) * (ry - it->y);
-      return a;
-    };
-
-    auto compute_area_from_next = [](value_type x, value_type y, Point* cnext) {
-      value_type a = 0;
-      auto rx = x;
-      auto ry = cnext->y;
-      auto it = cnext->lprev;
-      for (; it->y <= y; it = it->lprev) {
-        a += (rx - it->x) * (y - ry);
-        rx = it->x;
-        ry = it->y;
-      }
-      a += (rx - it->x) * (y - ry);
-      return a;
-    };
-
     // Find area contribution
-    value_type a = compute_area_from_prev(u[0], u[1], cprev);
-
-    value_type v = 0;
-    auto z = u[2];
+    auto a = compute_area_from_prev(u[0], u[1], cprev);
+    auto v = value_type{0};
+    auto z = value_type{u[2]};
     for (; p != NULL && (p->x < u[0] || p->y < u[1]); p = p->next) {
       v += a * (z - p->z);
       z = p->z;
-      value_type ac = 0;
+      auto ac = value_type{0};
       if (p->y >= u[1] && p->x >= cprev->x) {
         ac = compute_area_from_next(p->x, u[1], p->cnext);
         cprev = p;
@@ -569,8 +567,7 @@ class [[nodiscard]] hv3dplus_container {
     }
     m_hv += hvc;
 
-    auto u = new Point(p[0], p[1], p[2]);
-
+    // Utility functions (TODO maybe move to class private methods)
     auto try_update_cprev = [](Point* u, Point* v) {
       if (v->x < u->x && v->y > u->y) {
         if (u->cprev == NULL) {
@@ -591,6 +588,13 @@ class [[nodiscard]] hv3dplus_container {
       }
     };
 
+    // Remove non-dominated points in q
+    auto custom_weakly_dominates = [](Point* a, Point* b) {
+      return a->x >= b->x && a->y >= b->y && a->z >= b->z;
+    };
+
+    auto u = new Point(p[0], p[1], p[2]);
+
     for (auto it = m_set; it != NULL; it = it->next) {
       if (m_lex_ge(it, u)) {
         try_update_cnext(u, it);
@@ -600,11 +604,6 @@ class [[nodiscard]] hv3dplus_container {
         try_update_cprev(it, u);
       }
     }
-
-    // Remove non-dominated points in q
-    auto custom_weakly_dominates = [](Point* a, Point* b) {
-      return a->x >= b->x && a->y >= b->y && a->z >= b->z;
-    };
 
     for (auto it = m_set->next->next; it != NULL;) {
       if (custom_weakly_dominates(u, it)) {
