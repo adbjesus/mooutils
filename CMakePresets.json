@@ -25,9 +25,13 @@
         {
             "name": "default",
             "configurePreset": "default",
-            "buildConfig": "RelWithDebugInfo",
-            "output": { "outputOnFailure": true },
-            "execution": { "noTestsAction": "error", "stopOnFailure": true }
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": true
+            }
         }
     ]
 }

@@ -4,9 +4,6 @@
 #include <mooutils/sets.hpp>
 #include <mooutils/solution.hpp>
 
-#include <fmt/core.h>
-#include <fmt/ranges.h>
-
 #include <algorithm>
 #include <cmath>
 #include <deque>
@@ -73,11 +70,10 @@ auto filter_nondominated_points(R const &r, bool remove_equivalent) {
 using data_type = double;
 using dvec_type = std::array<size_t, 1>;
 using ovec_type = std::vector<data_type>;
-using cvec_type = std::array<size_t, 0>;
-using solution_type = mooutils::solution<dvec_type, ovec_type, cvec_type>;
-using multisets_types = std::tuple<mooutils::sets::multivector<solution_type>,         // noformat
-                                   mooutils::sets::sorted_multivector<solution_type>,  // noformat
-                                   mooutils::sets::sorted_multiset<solution_type>>;
+using solution_type = mooutils::unconstrained_solution<dvec_type, ovec_type>;
+using multisets_types = std::tuple<mooutils::unordered_set<solution_type>,  // noformat
+                                   mooutils::flat_set<solution_type>,       // noformat
+                                   mooutils::set<solution_type>>;
 
 TEMPLATE_LIST_TEST_CASE("multisets with random solutions", "[sets][template]", multisets_types) {
   std::random_device rd("/dev/urandom");
@@ -91,14 +87,14 @@ TEMPLATE_LIST_TEST_CASE("multisets with random solutions", "[sets][template]", m
   auto solutions = std::vector<solution_type>();
   solutions.reserve(n);
   for (size_t i = 0; i < n; ++i) {
-    solutions.emplace_back(dvec_type{i}, std::move(points[i]), cvec_type{}, true);
+    solutions.emplace_back(dvec_type{i}, std::move(points[i]));
   }
 
   auto ndom_solutions = filter_nondominated_points(solutions, false);
 
   auto set = TestType();
   for (auto const &s : solutions) {
-    if (strictly_dominates(set, s)) {
+    if (!set.empty() && mooutils::strictly_dominates(set, s)) {
       REQUIRE(set.insert(s) == set.end());
     } else {
       REQUIRE(*set.insert(s) == s);
@@ -139,7 +135,7 @@ TEMPLATE_LIST_TEST_CASE("multisets with equivalent solutions", "[sets][template]
   solutions.reserve(n);
   // Consider a list of equivalent (but not equal) solutions.
   for (size_t i = 0; i < n; ++i) {
-    solutions.emplace_back(dvec_type{i}, ovec_type(m, 0), cvec_type{}, true);
+    solutions.emplace_back(dvec_type{i}, ovec_type(m, 0));
   }
   auto ndom_solutions = filter_nondominated_points(solutions, false);
 
@@ -173,9 +169,9 @@ TEMPLATE_LIST_TEST_CASE("multisets with equivalent solutions", "[sets][template]
   REQUIRE(std::ranges::equal(aux, ndom_solutions) == true);
 }
 
-using sets_types = std::tuple<mooutils::sets::vector<solution_type>,         // noformat
-                              mooutils::sets::sorted_vector<solution_type>,  // noformat
-                              mooutils::sets::sorted_set<solution_type>>;
+using sets_types = std::tuple<mooutils::unordered_minimal_set<solution_type>,  // noformat
+                              mooutils::flat_minimal_set<solution_type>,       // noformat
+                              mooutils::minimal_set<solution_type>>;
 
 TEMPLATE_LIST_TEST_CASE("sets with random solutions", "[sets][template]", sets_types) {
   std::random_device rd("/dev/urandom");
@@ -189,14 +185,14 @@ TEMPLATE_LIST_TEST_CASE("sets with random solutions", "[sets][template]", sets_t
   auto solutions = std::vector<solution_type>();
   solutions.reserve(n);
   for (size_t i = 0; i < n; ++i) {
-    solutions.emplace_back(dvec_type{i}, std::move(points[i]), cvec_type{}, true);
+    solutions.emplace_back(dvec_type{i}, std::move(points[i]));
   }
 
   auto ndom_solutions = filter_nondominated_points(solutions, true);
 
   auto set = TestType();
   for (auto const &s : solutions) {
-    if (weakly_dominates(set, s)) {
+    if (!set.empty() && mooutils::weakly_dominates(set, s)) {
       REQUIRE(set.insert(s) == set.end());
     } else {
       REQUIRE(*set.insert(s) == s);
@@ -237,7 +233,7 @@ TEMPLATE_LIST_TEST_CASE("sets with equivalent solutions", "[sets][template]", se
   solutions.reserve(n);
   // Consider a list of equivalent (but not equal) solutions.
   for (size_t i = 0; i < n; ++i) {
-    solutions.emplace_back(dvec_type{i}, ovec_type(m, 0), cvec_type{}, true);
+    solutions.emplace_back(dvec_type{i}, ovec_type(m, 0));
   }
   auto ndom_solutions = filter_nondominated_points(solutions, true);
 

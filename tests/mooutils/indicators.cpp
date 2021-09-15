@@ -44,7 +44,7 @@ TEST_CASE("point hv", "[indicators][hv]") {
     expected *= result_type{p[i]} - result_type{r[i]};
   }
 
-  REQUIRE(mooutils::indicators::point_hv<result_type>(p, r) == expected);
+  REQUIRE(mooutils::point_hv<result_type>(p, r) == expected);
 }
 
 template <typename T, typename Rng>
@@ -87,34 +87,28 @@ TEST_CASE("set hv 2d properties", "[indicators][hv]") {
   auto max_seed = std::numeric_limits<rng_result_type>::max();
   auto seed = GENERATE_COPY(take(10, random(min_seed, max_seed)));
 
-  auto const set =
-      generate_nondominated_points<data_type, rng_type>(n, m, rng_type(seed), min_p, max_p);
+  auto const set = generate_nondominated_points<data_type, rng_type>(n, m, rng_type(seed), min_p, max_p);
 
   using set_type = decltype(set);
   using point_type = typename set_type::value_type;
 
   auto aux = set;
-  std::ranges::sort(aux, mooutils::lexicographically_greater<point_type>{});
+  std::ranges::sort(aux, mooutils::lexicographically_greater_fn{});
   auto const sorted_set = std::move(aux);
 
   // Non const equals same as const
   aux = set;
-  REQUIRE(mooutils::indicators::set_hv<result_type>(set, r) ==
-          mooutils::indicators::set_hv<result_type>(aux, r));
+  REQUIRE(mooutils::set_hv<result_type>(set, r) == mooutils::set_hv<result_type>(aux, r));
   aux = set;
-  REQUIRE(mooutils::indicators::set_hv2d<result_type>(set, r) ==
-          mooutils::indicators::set_hv2d<result_type>(aux, r));
+  REQUIRE(mooutils::set_hv2d<result_type>(set, r) == mooutils::set_hv2d<result_type>(aux, r));
   aux = sorted_set;
-  REQUIRE(mooutils::indicators::sorted_set_hv2d<result_type>(sorted_set, r) ==
-          mooutils::indicators::sorted_set_hv2d<result_type>(aux, r));
+  REQUIRE(mooutils::sorted_set_hv2d<result_type>(sorted_set, r) == mooutils::sorted_set_hv2d<result_type>(aux, r));
 
   // set_hv equals set_hv2d
-  REQUIRE(mooutils::indicators::set_hv<result_type>(set, r) ==
-          mooutils::indicators::set_hv2d<result_type>(set, r));
+  REQUIRE(mooutils::set_hv<result_type>(set, r) == mooutils::set_hv2d<result_type>(set, r));
 
   // set_hv equals sorted_set_hv2d
-  REQUIRE(mooutils::indicators::set_hv<result_type>(set, r) ==
-          mooutils::indicators::sorted_set_hv2d<result_type>(sorted_set, r));
+  REQUIRE(mooutils::set_hv<result_type>(set, r) == mooutils::sorted_set_hv2d<result_type>(sorted_set, r));
 }
 
 TEST_CASE("set hv 3d properties", "[indicators][hv]") {
@@ -136,34 +130,28 @@ TEST_CASE("set hv 3d properties", "[indicators][hv]") {
   auto max_seed = std::numeric_limits<rng_result_type>::max();
   auto seed = GENERATE_COPY(take(10, random(min_seed, max_seed)));
 
-  auto const set =
-      generate_nondominated_points<data_type, rng_type>(n, m, rng_type(seed), min_p, max_p);
+  auto const set = generate_nondominated_points<data_type, rng_type>(n, m, rng_type(seed), min_p, max_p);
 
   using set_type = decltype(set);
   using point_type = typename set_type::value_type;
 
   auto aux = set;
-  std::ranges::sort(aux, mooutils::lexicographically_greater<point_type>{});
+  std::ranges::sort(aux, mooutils::lexicographically_greater_fn{});
   auto const sorted_set = std::move(aux);
 
   // Non const equals same as const
   aux = set;
-  REQUIRE(mooutils::indicators::set_hv<result_type>(set, r) ==
-          mooutils::indicators::set_hv<result_type>(aux, r));
+  REQUIRE(mooutils::set_hv<result_type>(set, r) == mooutils::set_hv<result_type>(aux, r));
   aux = set;
-  REQUIRE(mooutils::indicators::set_hv3d<result_type>(set, r) ==
-          mooutils::indicators::set_hv3d<result_type>(aux, r));
+  REQUIRE(mooutils::set_hv3d<result_type>(set, r) == mooutils::set_hv3d<result_type>(aux, r));
   aux = sorted_set;
-  REQUIRE(mooutils::indicators::sorted_set_hv3d<result_type>(sorted_set, r) ==
-          mooutils::indicators::sorted_set_hv3d<result_type>(aux, r));
+  REQUIRE(mooutils::sorted_set_hv3d<result_type>(sorted_set, r) == mooutils::sorted_set_hv3d<result_type>(aux, r));
 
   // set_hv equals set_hv2d
-  REQUIRE(mooutils::indicators::set_hv<result_type>(set, r) ==
-          mooutils::indicators::set_hv3d<result_type>(set, r));
+  REQUIRE(mooutils::set_hv<result_type>(set, r) == mooutils::set_hv3d<result_type>(set, r));
 
   // set_hv equals sorted_set_hv2d
-  REQUIRE(mooutils::indicators::set_hv<result_type>(set, r) ==
-          mooutils::indicators::sorted_set_hv3d<result_type>(sorted_set, r));
+  REQUIRE(mooutils::set_hv<result_type>(set, r) == mooutils::sorted_set_hv3d<result_type>(sorted_set, r));
 }
 
 TEST_CASE("set hv wfg properties", "[indicators][hv]") {
@@ -185,34 +173,28 @@ TEST_CASE("set hv wfg properties", "[indicators][hv]") {
   auto max_seed = std::numeric_limits<rng_result_type>::max();
   auto seed = GENERATE_COPY(take(5, random(min_seed, max_seed)));
 
-  auto const set =
-      generate_nondominated_points<data_type, rng_type>(n, m, rng_type(seed), min_p, max_p);
+  auto const set = generate_nondominated_points<data_type, rng_type>(n, m, rng_type(seed), min_p, max_p);
 
   using set_type = decltype(set);
   using point_type = typename set_type::value_type;
 
   auto aux = set;
-  std::ranges::sort(aux, mooutils::lexicographically_greater<point_type>{});
+  std::ranges::sort(aux, mooutils::lexicographically_greater_fn{});
   auto const sorted_set = std::move(aux);
 
   // Non const equals same as const
   aux = set;
-  REQUIRE(mooutils::indicators::set_hv<result_type>(set, r) ==
-          mooutils::indicators::set_hv<result_type>(aux, r));
+  REQUIRE(mooutils::set_hv<result_type>(set, r) == mooutils::set_hv<result_type>(aux, r));
   aux = set;
-  REQUIRE(mooutils::indicators::set_hvwfg<result_type>(set, r) ==
-          mooutils::indicators::set_hvwfg<result_type>(aux, r));
+  REQUIRE(mooutils::set_hvwfg<result_type>(set, r) == mooutils::set_hvwfg<result_type>(aux, r));
   aux = sorted_set;
-  REQUIRE(mooutils::indicators::sorted_set_hvwfg<result_type>(sorted_set, r) ==
-          mooutils::indicators::sorted_set_hvwfg<result_type>(aux, r));
+  REQUIRE(mooutils::sorted_set_hvwfg<result_type>(sorted_set, r) == mooutils::sorted_set_hvwfg<result_type>(aux, r));
 
   // set_hv equals set_hv2d
-  REQUIRE(mooutils::indicators::set_hv<result_type>(set, r) ==
-          mooutils::indicators::set_hvwfg<result_type>(set, r));
+  REQUIRE(mooutils::set_hv<result_type>(set, r) == mooutils::set_hvwfg<result_type>(set, r));
 
   // set_hv equals sorted_set_hv2d
-  REQUIRE(mooutils::indicators::set_hv<result_type>(set, r) ==
-          mooutils::indicators::sorted_set_hvwfg<result_type>(sorted_set, r));
+  REQUIRE(mooutils::set_hv<result_type>(set, r) == mooutils::sorted_set_hvwfg<result_type>(sorted_set, r));
 }
 
 struct HypervolumeDataset {
@@ -274,16 +256,16 @@ TEST_CASE("set hv results", "[indicators][hv]") {
   for (auto const& p : std::filesystem::directory_iterator(datadir)) {
     auto hvdata = HypervolumeDataset(p);
     // Base set_hv function
-    REQUIRE(mooutils::indicators::set_hv<result_type>(hvdata.points, hvdata.refp) == hvdata.hv);
+    REQUIRE(mooutils::set_hv<result_type>(hvdata.points, hvdata.refp) == hvdata.hv);
     // Dynamic hv structs
-    auto hvs = mooutils::indicators::hypervolume_wfg<result_type>(hvdata.refp);
+    auto hvs = mooutils::hypervolume_wfg<result_type>(hvdata.refp);
     REQUIRE(test_hv_struct(hvs, hvdata) == true);
     if (hvdata.m == 2) {
-      auto hv2d = mooutils::indicators::hypervolume_2d<result_type>(hvdata.refp);
+      auto hv2d = mooutils::hypervolume_2d<result_type>(hvdata.refp);
       REQUIRE(test_hv_struct(hv2d, hvdata) == true);
     }
     if (hvdata.m == 3) {
-      auto hv3d = mooutils::indicators::hypervolume_3dplus<result_type>(hvdata.refp);
+      auto hv3d = mooutils::hypervolume_3dplus<result_type>(hvdata.refp);
       REQUIRE(test_hv_struct(hv3d, hvdata) == true);
     }
   }

@@ -5,120 +5,147 @@
 #include <type_traits>
 #include <vector>
 
-namespace mooutils::queues {
+namespace mooutils {
 
-template <typename Solution, typename Container = std::deque<Solution>>
-class fifo {
- public:
-  using value_type = Solution;
+// CRTP Base class for queues based on an stl (or equivalent) container.
+template <typename Derived, typename Container>
+class base_queue {
+ private:
+  friend Derived;
   using container_type = Container;
 
-  // Remove and return the next solution in the queue.
-  //
-  // Calling pop on an empty container is undefined.
-  auto pop() -> Solution {
-    auto ret = std::move(m_container.front());
-    m_container.pop_front();
-    return ret;
+ public:
+  using value_type = typename container_type::value_type;
+  using size_type = typename container_type::size_type;
+
+  base_queue()
+      : c() {}
+
+  base_queue(base_queue const& other) = default;
+
+  base_queue(base_queue&& other) = default;
+
+  explicit base_queue(container_type const& cont)
+      : c(cont) {}
+
+  explicit base_queue(container_type&& cont)
+      : c(std::move(cont)) {}
+
+  template <typename InputIt>
+  base_queue(InputIt first, InputIt last)
+      : c(first, last) {}
+
+  constexpr auto push(value_type const& value) {
+    return static_cast<Derived&>(*this).push_impl(value);
   }
 
-  // Push a new solution to the queue
-  template <typename S>
-  auto push(S&& s) {
-    m_container.emplace_back(std::forward<S>(s));
+  constexpr auto push(value_type&& value) {
+    return static_cast<Derived&>(*this).push_impl(std::move(value));
   }
 
-  // Check if queue is empty
-  auto empty() -> bool {
-    return m_container.empty();
+  constexpr auto pop() -> value_type {
+    assert(this->empty() == false);
+    return static_cast<Derived&>(*this).pop_impl();
   }
 
-  auto size() {
-    return m_container.size();
+  [[nodiscard]] constexpr auto empty() -> bool {
+    return this->c.empty();
+  }
+
+  [[nodiscard]] constexpr auto size() -> size_type {
+    return this->c.size();
   }
 
  private:
-  container_type m_container;
+  container_type c;
+};
+
+template <typename Solution, typename Container = std::deque<Solution>>
+class fifo_queue : public base_queue<fifo_queue<Solution, Container>, Container> {
+ public:
+  template <typename... Args>
+  explicit fifo_queue(Args&&... args)
+      : base_class_type(std::forward<Args>(args)...) {}
+
+ private:
+  using base_class_type = base_queue<fifo_queue<Solution, Container>, Container>;
+  using typename base_class_type::value_type;
+
+  friend base_class_type;
+
+  template <typename S>
+  constexpr auto push_impl(S&& s) {
+    this->c.push_back(std::forward<S>(s));
+  }
+
+  constexpr auto pop_impl() -> value_type {
+    auto res = std::move(this->c.front());
+    this->c.pop_front();
+    return res;
+  }
 };
 
 template <typename Solution, typename Container = std::vector<Solution>>
-class lifo {
+class lifo_queue : public base_queue<lifo_queue<Solution, Container>, Container> {
  public:
-  using value_type = Solution;
-  using container_type = Container;
-
-  // Remove and return the next solution in the queue.
-  //
-  // Calling pop on an empty container is undefined.
-  auto pop() -> Solution {
-    auto ret = std::move(m_container.back());
-    m_container.pop_back();
-    return ret;
-  }
-
-  // Push a new solution to the queue
-  template <typename S>
-  auto push(S&& s) {
-    m_container.emplace_back(std::forward<S>(s));
-  }
-
-  // Check if queue is empty
-  auto empty() -> bool {
-    return m_container.empty();
-  }
-
-  auto size() {
-    return m_container.size();
-  }
+  template <typename... Args>
+  explicit lifo_queue(Args&&... args)
+      : base_class_type(std::forward<Args>(args)...) {}
 
  private:
-  container_type m_container;
+  using base_class_type = base_queue<lifo_queue<Solution, Container>, Container>;
+  using typename base_class_type::value_type;
+
+  friend base_class_type;
+
+  template <typename S>
+  constexpr auto push_impl(S&& s) {
+    this->c.push_back(std::forward<S>(s));
+  }
+
+  constexpr auto pop_impl() -> value_type {
+    auto res = std::move(this->c.back());
+    this->c.pop_back();
+    return res;
+  }
 };
 
 template <typename Solution, typename Rng, typename Container = std::vector<Solution>>
-class random {
+class random_queue : public base_queue<random_queue<Solution, Rng, Container>, Container> {
  public:
-  using value_type = Solution;
   using rng_type = Rng;
-  using container_type = Container;
 
-  explicit random(Rng&& rng)
-      : m_container()
-      , m_rng(std::move(rng)) {}
+  template <typename... Args>
+  explicit random_queue(Args&&... args, Rng&& prng)
+      : base_class_type(std::forward<Args>(args)...)
+      , rng(std::move(prng)) {}
 
-  // Remove and return the next solution in the queue.
-  //
-  // Calling pop on an empty container is undefined.
-  auto pop() -> Solution {
-    auto size_minus_1 = m_container.size() - 1;
-    auto runif = std::uniform_int_distribution<size_t>(0, size_minus_1);
-    auto ind = runif(m_rng);
-    auto ret = std::move(m_container[ind]);
-    if (ind != size_minus_1) {
-      m_container[ind] = std::move(m_container.back());
-    }
-    m_container.pop_back();
-    return ret;
-  }
+ private:
+  using base_class_type = base_queue<random_queue<Solution, Rng, Container>, Container>;
+  using typename base_class_type::size_type;
+  using typename base_class_type::value_type;
+
+  friend base_class_type;
 
   // Push a new solution to the queue
   template <typename S>
-  auto push(S&& s) {
-    m_container.emplace_back(std::forward<S>(s));
+  constexpr auto push_impl(S&& s) {
+    this->c.emplace_back(std::forward<S>(s));
   }
 
-  // Check if queue is empty
-  auto empty() -> bool {
-    return m_container.empty();
+  constexpr auto pop_impl() -> value_type {
+    auto size_minus_1 = this->c.size() - 1;
+    auto runif = std::uniform_int_distribution<size_type>(0, size_minus_1);
+    auto ind = runif(this->rng);
+    auto ret = std::move(this->c[ind]);
+    if (ind != size_minus_1) {
+      this->c[ind] = std::move(this->c.back());
+    }
+    this->c.pop_back();
+    return ret;
   }
 
-  auto size() {
-    return m_container.size();
-  }
-
- private:
-  container_type m_container;
-  rng_type m_rng;
+  rng_type rng;
 };
 
-}  // namespace mooutils::queues
+}  // namespace mooutils

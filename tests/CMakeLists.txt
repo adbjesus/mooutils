@@ -2,10 +2,11 @@ find_package(Catch2 REQUIRED)
 
 add_executable(mooutils_tester
   main.cpp
-  mooutils/dominance.cpp
   mooutils/indicators.cpp
   mooutils/sets.cpp
   mooutils/queues.cpp
+  mooutils/solution.cpp
+  mooutils/orders.cpp
 )
 target_link_libraries(mooutils_tester Catch2::Catch2)
 target_link_libraries(mooutils_tester mooutils)

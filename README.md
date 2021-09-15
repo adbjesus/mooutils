@@ -1,7 +1,17 @@
-# mooutils
+# MOOUtils - Multi-Objective Optimization Utilities
 
-Library and solver for Multi-Objective Combinatorial Optimization (MOOUTILS)
-problems focusing on anytime algorithms.
+MOOUtils is a library containing utilities to help implement
+multi-objective optimization algorithms. Currently, it contains the
+following utilities:
+
+- `mooutils::solution::*` - this namespace contains a simple class
+  `solution` to keep a decision vector, objective vector, and constraint
+  vector. , as well as several functions to easily access those vectors.
+- `mooutils::orders::*` - several utilities for 
+- `mooutils::sets::*` - solutions sets to keep non-dominated
+  solutions, it contains both 
+- `mooutils::queues::*` - several solutions sets to keep non-dominated
+  solutions, it contains both 
 
 Note: This is still in the early phases of development, so expect things
 to change between versions.

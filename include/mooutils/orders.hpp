@@ -9,241 +9,345 @@
 
 namespace mooutils {
 
-// TODO add dominance relations with custom dominance order (currently assumes maximizing)
-// TODO add execution policy
+// TODO allow dominance relations with custom dominance order (currently always assumes maximizing)
+// TODO allow different objective vector(s) views, instead of constraining on concepts
+// TODO add execution policy?
 // TODO add dominated variants?
-// TODO use macros to automatically generate the range based functions
+// TODO add ordered set variants? would improved performance.
 
-template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator I2>
-[[nodiscard]] constexpr auto equivalent(I1 first1, S1 last1, I2 first2) -> bool {
-  for (; first1 != last1; ++first1, ++first2) {
-    if (*first1 != *first2) {
-      return false;
-    }
-  }
-  return true;
-}
-
-// Check if vector `v1` and `v2` are equivalent.
-//
-// Undefined behavior if `v1` and `v2` have different sizes.
-template <mooutils::is_or_has_objective_vector V1, mooutils::is_or_has_objective_vector V2>
-[[nodiscard]] constexpr auto equivalent(V1 const& v1, V2 const& v2) noexcept -> bool {
-  auto const& ov1 = get_objective_vector(v1);
-  auto const& ov2 = get_objective_vector(v2);
-  return equivalent(std::ranges::begin(ov1), std::ranges::end(ov1), std::ranges::begin(ov2));
-}
-
-template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator I2>
-[[nodiscard]] constexpr auto weakly_dominates(I1 first1, S1 last1, I2 first2) -> bool {
-  for (; first1 != last1; ++first1, ++first2) {
-    if (*first1 < *first2) {
-      return false;
-    }
-  }
-  return true;
-}
-
-// Check if a vector `v1` weakly dominates a vector `v2`.
-//
-// Undefined behavior if `v1` and `v2` have different sizes.
-template <mooutils::is_or_has_objective_vector V1, mooutils::is_or_has_objective_vector V2>
-[[nodiscard]] constexpr auto weakly_dominates(V1 const& v1, V2 const& v2) noexcept -> bool {
-  auto const& ov1 = get_objective_vector(v1);
-  auto const& ov2 = get_objective_vector(v2);
-  return weakly_dominates(std::ranges::begin(ov1), std::ranges::end(ov1), std::ranges::begin(ov2));
-}
-
-template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator I2>
-[[nodiscard]] constexpr auto dominates(I1 first1, S1 last1, I2 first2) -> bool {
-  for (; first1 != last1; ++first1, ++first2) {
-    if (*first1 > *first2) {
-      return weakly_dominates(++first1, last1, ++first2);
-    } else if (*first1 < *first2) {
-      return false;
-    }
-  }
-  return false;
-}
-
-// Check if a vector `v1` dominates a vector `v2`.
-//
-// Undefined behavior if `v1` and `v2` have different sizes.
-template <mooutils::is_or_has_objective_vector V1, mooutils::is_or_has_objective_vector V2>
-[[nodiscard]] constexpr auto dominates(V1 const& v1, V2 const& v2) noexcept -> bool {
-  auto const& ov1 = get_objective_vector(v1);
-  auto const& ov2 = get_objective_vector(v2);
-  return dominates(std::ranges::begin(ov1), std::ranges::end(ov1), std::ranges::begin(ov2));
-}
-
-template <std::input_iterator I1, std::sentinel_for<I1> S1, std::input_iterator I2>
-[[nodiscard]] constexpr auto strictly_dominates(I1 first1, S1 last1, I2 first2) -> bool {
-  for (; first1 != last1; ++first1, ++first2) {
-    if (*first1 <= *first2) {
-      return false;
-    }
-  }
-  return true;
-}
-
-// Check if a vector `v1` strictly dominates a vector `v2`.
-//
-// Undefined behavior if `v1` and `v2` have different sizes.
-template <mooutils::is_or_has_objective_vector V1, mooutils::is_or_has_objective_vector V2>
-[[nodiscard]] constexpr auto strictly_dominates(V1 const& v1, V2 const& v2) noexcept -> bool {
-  auto const& ov1 = get_objective_vector(v1);
-  auto const& ov2 = get_objective_vector(v2);
-  return strictly_dominates(std::ranges::begin(ov1), std::ranges::end(ov1),
-                            std::ranges::begin(ov2));
-}
-
-template <std::input_iterator I1, std::sentinel_for<I1> S1,  // noformat
-          std::input_iterator I2, std::sentinel_for<I2> S2>
-[[nodiscard]] constexpr auto incomparable(I1 first1, S1 last1, I2 first2, S2 last2) -> bool {
-  for (; first1 != last1; ++first1, ++first2) {
-    if (*first1 > *first2) {
-      return dominates(++first2, last2, ++first1);
-    } else if (*first2 > *first1) {
-      return dominates(++first1, last1, ++first2);
-    }
-  }
-  return false;
-}
-
-// Check if vector `v1` and `v2` are incomparable.
-//
-// Undefined behavior if `v1` and `v2` have different sizes.
-template <mooutils::is_or_has_objective_vector V1, mooutils::is_or_has_objective_vector V2>
-[[nodiscard]] constexpr auto incomparable(V1 const& v1, V2 const& v2) noexcept -> bool {
-  auto const& ov1 = get_objective_vector(v1);
-  auto const& ov2 = get_objective_vector(v2);
-  return incomparable(std::ranges::begin(ov1), std::ranges::end(ov1), std::ranges::begin(ov2),
-                      std::ranges::end(ov2));
-}
-
-/* Dominance relations between an objective vector and a set */
-
-template <mooutils::is_or_has_objective_vector V, mooutils::solution_set S>
-requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
-[[nodiscard]] constexpr auto weakly_dominates(V const& v, S const& set) -> bool {
-  if constexpr (requires {
-                  { set.weakly_dominated(v) } -> std::same_as<bool>;
-                }) {
-    // if the set has an equivalent method call that method
-    set.weakly_dominated(v);
-  } else {
-    // otherwise use a default implementation
-    return std::ranges::all_of(set, [&v](auto const& s) { return weakly_dominates(v, s); });
-  }
-}
-
-template <mooutils::is_or_has_objective_vector V, mooutils::solution_set S>
-requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
-[[nodiscard]] constexpr auto dominates(V const& v, S const& set) -> bool {
-  if constexpr (requires {
-                  { set.dominated(v) } -> std::same_as<bool>;
-                }) {
-    // if the set has an equivalent method call that method
-    set.dominated(v);
-  } else {
-    // otherwise use a default implementation
-    auto end = std::ranges::end(set);
-    for (auto it = std::ranges::begin(set); it != end; ++it) {
-      if (!weakly_dominates(v, *it)) {
+struct equivalent_fn {
+ public:
+  template <is_or_has_objective_vector V1, is_or_has_objective_vector V2>
+  [[nodiscard]] constexpr auto operator()(V1 const& v1, V2 const& v2) const -> bool {
+    auto const& ov1 = objective_vector(v1);
+    auto const& ov2 = objective_vector(v2);
+    assert(std::ranges::size(ov1) > 0);
+    assert(std::ranges::size(ov2) > 0);
+    assert(std::ranges::size(ov1) == std::ranges::size(ov2));
+    auto first1 = std::ranges::begin(ov1);
+    auto last1 = std::ranges::end(ov1);
+    auto first2 = std::ranges::begin(ov2);
+    for (; first1 != last1; ++first1, ++first2) {
+      if (*first1 != *first2) {
         return false;
       }
-      if (!weakly_dominates(*it, v)) {
-        return std::all_of(++it, end, [&v](auto const& s) { return weakly_dominates(v, s); });
+    }
+    return true;
+  }
+
+  template <is_or_has_objective_vector V, is_objective_vector_set S>
+  [[nodiscard]] constexpr auto operator()(V const& v, S const& set) const -> bool {
+    assert(std::ranges::size(set) > 0);
+    return std::ranges::all_of(set, [this, &v](auto const& s) { return operator()(s, v); });
+  }
+
+  template <is_objective_vector_set S, is_or_has_objective_vector V>
+  [[nodiscard]] constexpr auto operator()(S const& set, V const& v) const -> bool {
+    assert(std::ranges::size(set) > 0);
+    return operator()(v, set);
+  }
+
+  template <is_objective_vector_set S1, is_objective_vector_set S2>
+  [[nodiscard]] constexpr auto operator()(S1 const& set1, S2 const& set2, bool sorted = false) const -> bool {
+    assert(std::ranges::size(set1) > 0);
+    assert(std::ranges::size(set2) > 0);
+
+    if (sorted) {
+      auto prev1 = std::ranges::begin(set1);
+      auto last1 = std::ranges::end(set1);
+      auto prev2 = std::ranges::begin(set2);
+      auto last2 = std::ranges::end(set2);
+      if (!operator()(*prev1, *prev2)) {
+        return false;
+      }
+      auto cur1 = std::next(prev1);
+      auto cur2 = std::next(prev2);
+      while (cur1 != last1 && cur2 != last2) {
+        if (operator()(*cur1, *cur2)) {
+          prev1 = cur1++;
+          prev2 = cur2++;
+        } else if (operator()(*cur1, *prev2)) {
+          prev1 = cur1++;
+        } else if (operator()(*cur2, *prev1)) {
+          prev2 = cur2++;
+        } else {
+          return false;
+        }
+      }
+      for (; cur1 != last1; ++cur1) {
+        if (!operator()(*cur1, *prev2)) {
+          return false;
+        }
+      }
+      for (; cur2 != last2; ++cur2) {
+        if (!operator()(*cur2, *prev1)) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      // clang-format off
+      return std::ranges::all_of(set1, [this, &set2](auto const& s1) {
+        return std::ranges::any_of(set2, [this, &s1](auto const& s2) {
+          return operator()(s1, s2);
+        });
+      }) && std::ranges::all_of(set2, [this, &set1](auto const& s2) {
+        return std::ranges::any_of(set1, [this, &s2](auto const& s1) {
+          return operator()(s1, s2);
+        });
+      });
+      // clang-format on
+    }
+  }
+};
+
+inline constexpr equivalent_fn equivalent;
+
+struct weakly_dominates_fn {
+ public:
+  template <is_or_has_objective_vector V1, is_or_has_objective_vector V2>
+  [[nodiscard]] constexpr auto operator()(V1 const& v1, V2 const& v2) const -> bool {
+    auto const& ov1 = objective_vector(v1);
+    auto const& ov2 = objective_vector(v2);
+    assert(std::ranges::size(ov1) > 0);
+    assert(std::ranges::size(ov2) > 0);
+    assert(std::ranges::size(ov1) == std::ranges::size(ov2));
+    auto first1 = std::ranges::begin(ov1);
+    auto last1 = std::ranges::end(ov1);
+    auto first2 = std::ranges::begin(ov2);
+    for (; first1 != last1; ++first1, ++first2) {
+      if (*first1 < *first2) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  template <is_or_has_objective_vector V, is_objective_vector_set S>
+  [[nodiscard]] constexpr auto operator()(V const& v, S const& set) const -> bool {
+    assert(std::ranges::size(set) > 0);
+    return std::ranges::all_of(set, [this, &v](auto const& s) { return operator()(v, s); });
+  }
+
+  template <is_objective_vector_set S, is_or_has_objective_vector V>
+  [[nodiscard]] constexpr auto operator()(S const& set, V const& v) const -> bool {
+    assert(std::ranges::size(set) > 0);
+    return std::ranges::any_of(set, [this, &v](auto const& s) { return operator()(s, v); });
+  }
+
+  template <is_objective_vector_set S1, is_objective_vector_set S2>
+  [[nodiscard]] constexpr auto operator()(S1 const& set1, S2 const& set2) const -> bool {
+    assert(std::ranges::size(set1) > 0);
+    assert(std::ranges::size(set2) > 0);
+
+    // clang-format off
+    return std::ranges::all_of(set2, [this, &set1](auto const& s2) {
+      return std::ranges::any_of(set1, [this, &s2](auto const& s1) {
+        return operator()(s1, s2);
+      });
+    });
+    // clang-format on
+  }
+};
+
+inline constexpr weakly_dominates_fn weakly_dominates;
+
+struct dominates_fn {
+ public:
+  template <is_or_has_objective_vector V1, is_or_has_objective_vector V2>
+  [[nodiscard]] constexpr auto operator()(V1 const& v1, V2 const& v2) const -> bool {
+    auto const& ov1 = objective_vector(v1);
+    auto const& ov2 = objective_vector(v2);
+    assert(std::ranges::size(ov1) > 0);
+    assert(std::ranges::size(ov2) > 0);
+    assert(std::ranges::size(ov1) == std::ranges::size(ov2));
+    auto first1 = std::ranges::begin(ov1);
+    auto last1 = std::ranges::end(ov1);
+    auto first2 = std::ranges::begin(ov2);
+    for (; first1 != last1; ++first1, ++first2) {
+      if (*first1 > *first2) {  // one strict inequality guaranteed
+        for (++first1, ++first2; first1 != last1; ++first1, ++first2) {
+          if (*first1 < *first2) {
+            return false;
+          }
+        }
+        return true;
+      } else if (*first1 < *first2) {
+        return false;
       }
     }
     return false;
   }
-}
 
-// For every solution
-template <mooutils::is_or_has_objective_vector V, mooutils::solution_set S>
-requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
-[[nodiscard]] constexpr auto strictly_dominates(V const& v, S const& set) -> bool {
-  if constexpr (requires {
-                  { set.strictly_dominated(v) } -> std::same_as<bool>;
-                }) {
-    // if the set has an equivalent method call that method
-    set.strictly_dominated(v);
-  } else {
-    // otherwise use a default implementation
+  template <is_or_has_objective_vector V, is_objective_vector_set S>
+  [[nodiscard]] constexpr auto operator()(V const& v, S const& set) const -> bool {
+    assert(std::ranges::size(set) > 0);
+    // This is the same as strictly dominates.
+    return std::ranges::all_of(set, [this, &v](auto const& s) { return operator()(v, s); });
+  }
+
+  template <is_objective_vector_set S, is_or_has_objective_vector V>
+  [[nodiscard]] constexpr auto operator()(S const& set, V const& v) const -> bool {
+    assert(std::ranges::size(set) > 0);
+    auto last = std::ranges::end(set);
+    for (auto it = std::ranges::begin(set); it != last; ++it) {
+      if (!weakly_dominates(v, *it)) {
+        // `v` does not weakly dominated `set`, find if `set` weakly dominates `v`
+        return weakly_dominates(std::ranges::subrange(it, last), v);
+      }
+      if (weakly_dominates(*it, v)) {
+        // `set` weakly dominates `v`, find if `v` does not weakly
+        // dominate set (note that, we already checked this and previous
+        // elements)
+        if (++it != last) {
+          return !weakly_dominates(v, std::ranges::subrange(it, last));
+        } else {
+          return false;
+        }
+      }
+    }
+    return false;
+  }
+
+  template <is_objective_vector_set S1, is_objective_vector_set S2>
+  [[nodiscard]] constexpr auto operator()(S1 const& set1, S2 const& set2) const -> bool {
+    assert(std::ranges::size(set1) > 0);
+    assert(std::ranges::size(set2) > 0);
+    return weakly_dominates(set1, set2) && !weakly_dominates(set2, set1);
+  }
+};
+
+inline constexpr dominates_fn dominates;
+
+struct strictly_dominates_fn {
+ public:
+  template <is_or_has_objective_vector V1, is_or_has_objective_vector V2>
+  [[nodiscard]] constexpr auto operator()(V1 const& v1, V2 const& v2) const -> bool {
+    auto const& ov1 = objective_vector(v1);
+    auto const& ov2 = objective_vector(v2);
+    assert(std::ranges::size(ov1) > 0);
+    assert(std::ranges::size(ov2) > 0);
+    assert(std::ranges::size(ov1) == std::ranges::size(ov2));
+    auto first1 = std::ranges::begin(ov1);
+    auto last1 = std::ranges::end(ov1);
+    auto first2 = std::ranges::begin(ov2);
+    for (; first1 != last1; ++first1, ++first2) {
+      if (*first1 <= *first2) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  template <is_or_has_objective_vector V, is_objective_vector_set S>
+  [[nodiscard]] constexpr auto operator()(V const& v, S const& set) const -> bool {
+    assert(std::ranges::size(set) > 0);
     return std::ranges::all_of(set, [&v](auto const& s) { return dominates(v, s); });
   }
-}
 
-/* Dominance relations between a set and and an objective vector */
-
-template <mooutils::solution_set S, mooutils::is_or_has_objective_vector V>
-requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
-[[nodiscard]] constexpr auto weakly_dominates(S const& set, V const& v) -> bool {
-  if constexpr (requires {
-                  { set.weakly_dominates(v) } -> std::same_as<bool>;
-                }) {
-    // if the set has such a method call that method
-    set.weakly_dominates(v);
-  } else {
-    // otherwise use a default implementation
-    return std::ranges::any_of(set, [&v](auto const& s) { return weakly_dominates(s, v); });
-  }
-}
-
-template <mooutils::solution_set S, mooutils::is_or_has_objective_vector V>
-requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
-[[nodiscard]] constexpr auto dominates(S const& set, V const& v) -> bool {
-  if constexpr (requires {
-                  { set.dominates(v) } -> std::same_as<bool>;
-                }) {
-    // if the set has such a method call that method
-    set.dominates(v);
-  } else {
-    // otherwise use a default implementation
-    // TODO this can be improved
-    return weakly_dominates(set, v) && !weakly_dominates(v, set);
-  }
-}
-
-template <mooutils::solution_set S, mooutils::is_or_has_objective_vector V>
-requires mooutils::is_or_has_objective_vector<mooutils::solution_t<S>>
-[[nodiscard]] constexpr auto strictly_dominates(S const& set, V const& v) -> bool {
-  if constexpr (requires {
-                  { set.strictly_dominates(v) } -> std::same_as<bool>;
-                }) {
-    // if the set has such a method call that method
-    set.strictly_dominates(v);
-  } else {
-    // otherwise use a default implementation
+  template <is_objective_vector_set S, is_or_has_objective_vector V>
+  [[nodiscard]] constexpr auto operator()(S const& set, V const& v) const -> bool {
+    assert(std::ranges::size(set) > 0);
     return std::ranges::any_of(set, [&v](auto const& s) { return dominates(s, v); });
   }
-}
 
-/* TODO Dominance relations between sets */
+  template <is_objective_vector_set S1, is_objective_vector_set S2>
+  [[nodiscard]] constexpr auto operator()(S1 const& set1, S2 const& set2) const -> bool {
+    assert(std::ranges::size(set1) > 0);
+    assert(std::ranges::size(set2) > 0);
 
-template <typename T, typename U = T>
-concept dominance_comparable = requires(T const& t, U const& u) {
-  {equivalent(t, u)};
-  {equivalent(u, t)};
-  {weakly_dominates(t, u)};
-  {weakly_dominates(u, t)};
-  {dominates(t, u)};
-  {dominates(u, t)};
-  {strictly_dominates(t, u)};
-  {strictly_dominates(u, t)};
-  {incomparable(t, u)};
-  {incomparable(u, t)};
-};
-
-template <typename Lhs, typename Rhs = Lhs>
-requires mooutils::is_or_has_objective_vector<Lhs> && mooutils::is_or_has_objective_vector<Rhs>
-struct lexicographically_greater {
-  auto operator()(Lhs const& lhs, Rhs const& rhs) const -> bool {
-    auto const& ovl = mooutils::get_objective_vector(lhs);
-    auto const& ovr = mooutils::get_objective_vector(rhs);
-    return std::ranges::lexicographical_compare(ovr, ovl);
+    // clang-format off
+    return std::ranges::all_of(set2, [&](auto const& s2) {
+      return std::ranges::any_of(set1, [&](auto const& s1) {
+        return dominates(s1, s2);
+      });
+    });
+    // clang-format on
   }
 };
+
+inline constexpr strictly_dominates_fn strictly_dominates;
+
+struct incomparable_fn {
+ public:
+  template <is_or_has_objective_vector V1, is_or_has_objective_vector V2>
+  [[nodiscard]] constexpr auto operator()(V1 const& v1, V2 const& v2) const -> bool {
+    auto const& ov1 = objective_vector(v1);
+    auto const& ov2 = objective_vector(v2);
+    assert(std::ranges::size(ov1) > 0);
+    assert(std::ranges::size(ov2) > 0);
+    assert(std::ranges::size(ov1) == std::ranges::size(ov2));
+    auto first1 = std::ranges::begin(ov1);
+    auto last1 = std::ranges::end(ov1);
+    auto first2 = std::ranges::begin(ov2);
+    for (; first1 != last1; ++first1, ++first2) {
+      if (*first1 > *first2) {
+        for (++first1, ++first2; first1 != last1; ++first1, ++first2) {
+          if (*first2 > *first1) {
+            return true;
+          }
+        }
+        return false;
+      } else if (*first2 > *first1) {
+        for (++first1, ++first2; first1 != last1; ++first1, ++first2) {
+          if (*first1 > *first2) {
+            return true;
+          }
+        }
+        return false;
+      }
+    }
+    return false;
+  }
+
+  template <is_or_has_objective_vector V, is_objective_vector_set S>
+  [[nodiscard]] constexpr auto operator()(V const& v, S const& set) const -> bool {
+    assert(std::ranges::size(set) > 0);
+    auto last = std::ranges::end(set);
+    for (auto it = std::ranges::begin(set); it != last; ++it) {
+      if (weakly_dominates(*it, v)) {
+        return false;
+      }
+      if (operator()(v, *it)) {
+        // `v` is incomparable to `*it`, so we just need to check if `set` does not weakly dominate `v`
+        for (++it; it != last; ++it) {
+          if (weakly_dominates(*it, v)) {
+            return false;
+          }
+        }
+        return true;
+      }
+    }
+    // this should be unreachable
+    return false;
+  }
+
+  template <is_objective_vector_set S, is_or_has_objective_vector V>
+  [[nodiscard]] constexpr auto operator()(S const& set, V const& v) const -> bool {
+    assert(std::ranges::size(set) > 0);
+    return operator()(v, set);
+  }
+
+  template <is_objective_vector_set S1, is_objective_vector_set S2>
+  [[nodiscard]] constexpr auto operator()(S1 const& set1, S2 const& set2) const -> bool {
+    assert(std::ranges::size(set1) > 0);
+    assert(std::ranges::size(set2) > 0);
+    return !weakly_dominates(set1, set2) && !weakly_dominates(set2, set1);
+  }
+};
+
+inline constexpr incomparable_fn incomparable;
+
+struct lexicographically_greater_fn {
+  template <is_or_has_objective_vector V1, is_or_has_objective_vector V2>
+  auto operator()(V1 const& v1, V2 const& v2) const -> bool {
+    auto const& ov1 = objective_vector(v1);
+    auto const& ov2 = objective_vector(v2);
+    assert(ov1.size() == ov2.size());
+    return std::ranges::lexicographical_compare(ov2, ov1);
+  }
+};
+
+inline constexpr lexicographically_greater_fn lexicographically_greater;
 
 }  // namespace mooutils

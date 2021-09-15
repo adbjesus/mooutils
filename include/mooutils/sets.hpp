@@ -12,20 +12,56 @@
 #include <set>
 #include <vector>
 
-namespace mooutils::sets {
+namespace mooutils {
 
-template <typename Solution, typename Container>
-requires std::same_as<Solution, typename Container::value_type>
-class _set_base {
+// CRTP Base class for sets based on an stl (or equivalent) container.
+// This means, that it can implement most required functions by default.
+template <typename Derived, typename Container>
+requires is_or_has_objective_vector<typename Container::value_type>
+class base_set {
+  friend Derived;
+
  public:
-  using container_type = Container;
-  using value_type = typename container_type::value_type;
-  using reference = typename container_type::reference;
-  using const_reference = typename container_type::const_reference;
-  using iterator = typename container_type::iterator;
-  using const_iterator = typename container_type::const_iterator;
-  using difference_type = typename container_type::difference_type;
-  using size_type = typename container_type::size_type;
+  using value_type = Container::value_type;
+  using reference = Container::reference;
+  using const_reference = Container::const_reference;
+  using iterator = Container::iterator;
+  using const_iterator = Container::const_iterator;
+  using difference_type = Container::difference_type;
+  using size_type = Container::size_type;
+
+  base_set()
+      : c() {}
+
+  base_set(base_set const& other) = default;
+
+  base_set(base_set&& other) = default;
+
+  explicit base_set(Container const& cont)
+      : c(cont) {}
+
+  explicit base_set(Container&& cont)
+      : c(std::move(cont)) {}
+
+  template <typename InputIt>
+  base_set(InputIt first, InputIt last)
+      : c(first, last) {}
+
+  constexpr auto insert(value_type const& solution) -> iterator {
+    return static_cast<Derived&>(*this).insert_impl(solution);
+  }
+
+  constexpr auto insert(value_type&& solution) -> iterator {
+    return static_cast<Derived&>(*this).insert_impl(std::move(solution));
+  }
+
+  constexpr auto insert_unchecked(value_type const& solution) -> iterator {
+    return static_cast<Derived&>(*this).insert_unchecked_impl(solution);
+  }
+
+  constexpr auto insert_unchecked(value_type&& solution) -> iterator {
+    return static_cast<Derived&>(*this).insert_unchecked_impl(std::move(solution));
+  }
 
   constexpr auto erase(const_iterator it) -> iterator {
     return c.erase(it);
@@ -67,22 +103,26 @@ class _set_base {
     return c.empty();
   }
 
- protected:
-  container_type c;
+ private:
+  Container c;
 };
 
 template <typename Solution, typename Container = std::vector<Solution>>
-class vector : public _set_base<Solution, Container> {
+class unordered_minimal_set : public base_set<unordered_minimal_set<Solution, Container>, Container> {
  private:
-  using _set_base_type = _set_base<Solution, Container>;
+  using base_class_type = base_set<unordered_minimal_set<Solution, Container>, Container>;
+  friend base_class_type;
 
  public:
-  using typename _set_base_type::iterator;
-  using typename _set_base_type::size_type;
-  using typename _set_base_type::value_type;
+  template <typename... Args>
+  explicit unordered_minimal_set(Args&&... args)
+      : base_class_type(std::forward<Args>(args)...) {}
+
+ private:
+  using typename base_class_type::iterator;
 
   template <typename S>
-  constexpr auto insert(S&& solution) -> iterator {
+  constexpr auto insert_impl(S&& solution) -> iterator {
     auto const first = this->c.begin();
     auto const last = this->c.end();
     for (auto it = first; it != last; ++it) {
@@ -106,27 +146,27 @@ class vector : public _set_base<Solution, Container> {
   }
 
   template <typename S>
-  constexpr auto insert_unchecked(S&& solution) -> iterator {
+  constexpr auto insert_unchecked_impl(S&& solution) -> iterator {
     return this->c.emplace(this->c.end(), std::forward<S>(solution));
-  }
-
-  constexpr auto reserve(size_type n) -> void {
-    this->c.reserve(n);
   }
 };
 
 template <typename Solution, typename Container = std::vector<Solution>>
-class multivector : public _set_base<Solution, Container> {
+class unordered_set : public base_set<unordered_set<Solution, Container>, Container> {
  private:
-  using _set_base_type = _set_base<Solution, Container>;
+  using base_class_type = base_set<unordered_set<Solution, Container>, Container>;
+  friend base_class_type;
 
  public:
-  using typename _set_base_type::iterator;
-  using typename _set_base_type::size_type;
-  using typename _set_base_type::value_type;
+  template <typename... Args>
+  explicit unordered_set(Args&&... args)
+      : base_class_type(std::forward<Args>(args)...) {}
+
+ private:
+  using typename base_class_type::iterator;
 
   template <typename S>
-  constexpr auto insert(S&& solution) -> iterator {
+  constexpr auto insert_impl(S&& solution) -> iterator {
     auto const first = this->c.begin();
     auto const last = this->c.end();
     for (auto it = first; it != last; ++it) {
@@ -154,29 +194,31 @@ class multivector : public _set_base<Solution, Container> {
   }
 
   template <typename S>
-  constexpr auto insert_unchecked(S&& solution) -> iterator {
+  constexpr auto insert_unchecked_impl(S&& solution) -> iterator {
     return this->c.emplace(this->c.end(), std::forward<S>(solution));
-  }
-
-  constexpr auto reserve(size_type n) -> void {
-    this->c.reserve(n);
   }
 };
 
-template <typename Solution, typename Compare = lexicographically_greater<Solution>,
+template <typename Solution,                                // noformat
+          typename Compare = lexicographically_greater_fn,  // noformat
           typename Container = std::vector<Solution>>
-class sorted_vector : public _set_base<Solution, Container> {
+class flat_minimal_set : public base_set<flat_minimal_set<Solution, Compare, Container>, Container> {
  private:
-  using _set_base_type = _set_base<Solution, Container>;
+  using base_class_type = base_set<flat_minimal_set<Solution, Compare, Container>, Container>;
+  friend base_class_type;
 
  public:
   using compare = Compare;
-  using typename _set_base_type::iterator;
-  using typename _set_base_type::size_type;
-  using typename _set_base_type::value_type;
+
+  template <typename... Args>
+  explicit flat_minimal_set(Args&&... args)
+      : base_class_type(std::forward<Args>(args)...) {}
+
+ private:
+  using typename base_class_type::iterator;
 
   template <typename S>
-  constexpr auto insert(S&& solution) -> iterator {
+  constexpr auto insert_impl(S&& solution) -> iterator {
     auto first = this->c.begin();
     auto last = this->c.end();
     auto mid = std::lower_bound(first, last, solution, compare{});
@@ -196,36 +238,39 @@ class sorted_vector : public _set_base<Solution, Container> {
     // TODO this could be improved to be O(N) instead of O(2N) if at least one item is to be removed
     auto it = this->c.emplace(mid, std::forward<S>(solution));
     last = this->c.end();
-    this->c.erase(std::remove_if(std::next(it), last, [it](auto const& s) { return dominates(*it, s); }), last);
+    auto aux = std::remove_if(std::next(it), last, [it](auto const& s) { return dominates(*it, s); });
+    this->c.erase(aux, last);
     return it;
   }
 
   template <typename S>
-  constexpr auto insert_unchecked(S&& solution) -> iterator {
+  constexpr auto insert_unchecked_impl(S&& solution) -> iterator {
     auto mid = std::lower_bound(this->c.begin(), this->c.end(), solution, compare{});
     return this->c.emplace(mid, std::forward<S>(solution));
   }
-
-  constexpr auto reserve(size_type n) -> void {
-    this->c.reserve(n);
-  }
 };
 
-template <typename Solution, typename Compare = lexicographically_greater<Solution>,
+template <typename Solution,                                // noformat
+          typename Compare = lexicographically_greater_fn,  // noformat
           typename Container = std::vector<Solution>>
-class sorted_multivector : public _set_base<Solution, Container> {
+class flat_set : public base_set<flat_set<Solution, Compare, Container>, Container> {
  private:
-  using _set_base_type = _set_base<Solution, Container>;
+  using base_class_type = base_set<flat_set<Solution, Compare, Container>, Container>;
+  friend base_class_type;
 
  public:
   using compare = Compare;
-  using typename _set_base_type::iterator;
-  using typename _set_base_type::size_type;
-  using typename _set_base_type::value_type;
+
+  template <typename... Args>
+  explicit flat_set(Args&&... args)
+      : base_class_type(std::forward<Args>(args)...) {}
+
+ private:
+  using typename base_class_type::iterator;
 
   // TODO can be optimized for d == 2
   template <typename S>
-  constexpr auto insert(S&& solution) -> iterator {
+  constexpr auto insert_impl(S&& solution) -> iterator {
     auto first = this->c.begin();
     auto last = this->c.end();
     auto mid1 = std::lower_bound(first, last, solution, compare{});
@@ -254,34 +299,38 @@ class sorted_multivector : public _set_base<Solution, Container> {
     // TODO can be optimized if at least one item is to be removed
     auto it = this->c.emplace(mid2, std::forward<S>(solution));
     last = this->c.end();
-    this->c.erase(std::remove_if(std::next(it), last, [it](auto const& s) { return dominates(*it, s); }), last);
+    auto aux = std::remove_if(std::next(it), last, [it](auto const& s) { return dominates(*it, s); });
+    this->c.erase(aux, last);
     return it;
   }
 
   template <typename S>
-  constexpr auto insert_unchecked(S&& solution) -> iterator {
+  constexpr auto insert_unchecked_impl(S&& solution) -> iterator {
     auto mid = std::lower_bound(this->c.begin(), this->c.end(), solution, compare{});
     return this->c.emplace(mid, std::forward<S>(solution));
   }
-
-  constexpr auto reserve(size_type n) -> void {
-    this->c.reserve(n);
-  }
 };
 
-template <typename Solution, typename Compare = lexicographically_greater<Solution>,
+template <typename Solution,                                // noformat
+          typename Compare = lexicographically_greater_fn,  // noformat
           typename Container = std::multiset<Solution, Compare>>
-requires mooutils::dominance_comparable<Solution> && std::same_as<Solution, typename Container::value_type>
-class sorted_set : public _set_base<Solution, Container> {
+class minimal_set : public base_set<minimal_set<Solution, Compare, Container>, Container> {
  private:
-  using _set_base_type = _set_base<Solution, Container>;
+  using base_class_type = base_set<minimal_set<Solution, Compare, Container>, Container>;
+  friend base_class_type;
 
  public:
   using compare = Compare;
-  using typename _set_base_type::iterator;
+
+  template <typename... Args>
+  explicit minimal_set(Args&&... args)
+      : base_class_type(std::forward<Args>(args)...) {}
+
+ private:
+  using typename base_class_type::iterator;
 
   template <typename S>
-  constexpr auto insert(S&& solution) -> iterator {
+  constexpr auto insert_impl(S&& solution) -> iterator {
     auto first = this->c.begin();
     auto last = this->c.end();
     auto mid = this->c.lower_bound(solution);
@@ -310,24 +359,31 @@ class sorted_set : public _set_base<Solution, Container> {
   }
 
   template <typename S>
-  constexpr auto insert_unchecked(S&& solution) -> iterator {
+  constexpr auto insert_unchecked_impl(S&& solution) -> iterator {
     return this->c.emplace(std::forward<S>(solution));
   }
 };
 
-template <typename Solution, typename Compare = lexicographically_greater<Solution>,
+template <typename Solution,                                // noformat
+          typename Compare = lexicographically_greater_fn,  // noformat
           typename Container = std::multiset<Solution, Compare>>
-requires mooutils::dominance_comparable<Solution> && std::same_as<Solution, typename Container::value_type>
-class sorted_multiset : public _set_base<Solution, Container> {
+class set : public base_set<set<Solution, Compare, Container>, Container> {
  private:
-  using _set_base_type = _set_base<Solution, Container>;
+  using base_class_type = base_set<set<Solution, Compare, Container>, Container>;
+  friend base_class_type;
 
  public:
   using compare = Compare;
-  using typename _set_base_type::iterator;
+
+  template <typename... Args>
+  explicit set(Args&&... args)
+      : base_class_type(std::forward<Args>(args)...) {}
+
+ private:
+  using typename base_class_type::iterator;
 
   template <typename S>
-  constexpr auto insert(S&& solution) -> iterator {
+  constexpr auto insert_impl(S&& solution) -> iterator {
     auto first = this->c.begin();
     auto last = this->c.end();
     auto mid1 = this->c.lower_bound(solution);
@@ -365,9 +421,9 @@ class sorted_multiset : public _set_base<Solution, Container> {
   }
 
   template <typename S>
-  constexpr auto insert_unchecked(S&& solution) -> iterator {
+  constexpr auto insert_unchecked_impl(S&& solution) -> iterator {
     return this->c.emplace(std::forward<S>(solution));
   }
 };
 
-}  // namespace mooutils::sets
+}  // namespace mooutils
