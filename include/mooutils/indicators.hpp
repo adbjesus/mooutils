@@ -136,7 +136,7 @@ struct hvwfg_fn {
       return this->wfg(set, r, T{1});
     } else {
       auto ovs = objective_vectors(set);
-      using ov_type = std::remove_cvref_t<std::ranges::range_value_t<decltype(ovs)>>;
+      using ov_type = std::ranges::range_value_t<decltype(ovs)>;
       auto sorted_set = std::vector<ov_type>(ovs.begin(), ovs.end());
       std::ranges::sort(sorted_set, lexicographically_greater_fn{});
       return operator()(std::move(sorted_set), r, true);
@@ -148,7 +148,7 @@ struct hvwfg_fn {
   [[nodiscard]] constexpr auto limitset(S const& set, V const& v) const {
     auto const& ov = objective_vector(v);
     auto const& ovs = objective_vectors(set);
-    using ov_type = std::ranges::range_value_t<decltype(ovs)>;
+    using ov_type = std::vector<T>;  // std::ranges::range_value_t<decltype(ovs)>;
     std::vector<ov_type> tmp;
     tmp.reserve(set.size());
     auto res = flat_minimal_set<ov_type>(std::move(tmp));
@@ -183,11 +183,12 @@ struct hvwfg_fn {
       tmp.reserve(set.size());
       auto newset = flat_minimal_set<ov_type>(std::move(tmp));
 
-      auto newr = ov_type(r.begin() + 1, r.end());
+      auto newr = std::span(r.begin() + 1, r.end());
 
       auto v = T{0};
-      for (auto const& p : ovs) {
+      for (auto& p : ovs) {
         auto newc = c * (p[0] - r[0]);
+        // TODO See if we could use a std::span to avoid copying
         auto newp = ov_type(p.begin() + 1, p.end());
         v += this->exclhv(newset, newp, newr, newc);
         newset.insert(std::move(newp));

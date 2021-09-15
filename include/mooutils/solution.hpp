@@ -82,7 +82,7 @@ class unconstrained_solution : public base_decision_vector<DVec>, public base_ob
       , base_objective_vector_type(std::forward<OV>(ov)) {}
 
   auto operator==(unconstrained_solution const& other) const {
-    return this->dvec == other.dvec;
+    return std::equal(this->dvec.begin(), this->dvec.end(), other.dvec.begin(), other.dvec.end());
   }
 };
 
@@ -103,7 +103,7 @@ class constrained_solution : public base_decision_vector<DVec>,
       , base_constraint_vector_type(std::forward<CV>(cv)) {}
 
   auto operator==(constrained_solution const& other) const {
-    return this->dvec == other.dvec;
+    return std::equal(this->dvec.begin(), this->dvec.end(), other.dvec.begin(), other.dvec.end());
   }
 };
 

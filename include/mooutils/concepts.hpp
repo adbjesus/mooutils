@@ -13,7 +13,7 @@ concept is_decision_vector =
   std::ranges::sized_range<T> &&
   std::ranges::common_range<T> &&
   std::ranges::random_access_range<T> &&
-  std::equality_comparable<T> &&
+  std::equality_comparable<std::ranges::range_value_t<T>> &&
   !std::ranges::range<std::ranges::range_value_t<T>>;
 
 template<typename T>
@@ -32,7 +32,7 @@ concept is_objective_vector =
   std::ranges::sized_range<T> &&
   std::ranges::common_range<T> &&
   std::ranges::random_access_range<T> &&
-  std::totally_ordered<T> &&
+  std::totally_ordered<std::ranges::range_value_t<T>> &&
   !std::ranges::range<std::ranges::range_value_t<T>>;
 
 template<typename T>
@@ -51,7 +51,7 @@ concept is_constraint_vector =
   std::ranges::sized_range<T> &&
   std::ranges::common_range<T> &&
   std::ranges::random_access_range<T> &&
-  std::totally_ordered<T> &&
+  std::totally_ordered<std::ranges::range_value_t<T>> &&
   !std::ranges::range<std::ranges::range_value_t<T>>;
 
 template<typename T>

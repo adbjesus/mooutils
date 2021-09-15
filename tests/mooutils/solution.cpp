@@ -2,6 +2,10 @@
 
 #include <mooutils/solution.hpp>
 
+#include <array>
+#include <span>
+#include <vector>
+
 TEST_CASE("unconstrained solution", "[solutions][classes]") {
   using dvec_type = std::vector<bool>;
   using ovec_type = std::array<int, 2>;
@@ -64,8 +68,10 @@ TEST_CASE("decision vector view", "[solutions][view]") {
 }
 
 TEST_CASE("objective vector view", "[solutions][view]") {
-  using ovec_type = std::vector<int>;
-  auto ovec = ovec_type{1, 2, 3};
+  using ovec_type_aux = std::vector<int>;
+  using ovec_type = std::span<int>;
+  auto ovec_aux = ovec_type_aux{1, 2, 3};
+  auto ovec = ovec_type{ovec_aux};
 
   auto& ovec_lvalue_ref = mooutils::objective_vector(ovec);
   REQUIRE(std::addressof(ovec) == std::addressof(ovec_lvalue_ref));
