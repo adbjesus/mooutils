@@ -37,7 +37,6 @@ endif ()
 
 # Project options
 # By default build apps and documentation
-option(MOOUTILS_BUILD_APPS "Build the apps." ON)
 option(MOOUTILS_BUILD_DOCS "Build the documentation." ON)
 # By default build tests and benchmarks only if not a subproject
 option(MOOUTILS_BUILD_TESTS "Build the tests." ${MOOUTILS_NOT_SUBPROJECT})
@@ -76,14 +75,9 @@ configure_file(
 )
 install(FILES "${PROJECT_BINARY_DIR}/mooutils.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 
-# Define solver target
-if(MOOUTILS_BUILD_APPS)
-  # add_subdirectory(apps)
-endif()
-
 # Define docs target
 if(MOOUTILS_BUILD_DOCS)
-  add_subdirectory(docs)
+  # TODO add_subdirectory(docs)
 endif()
 
 # Define tests target
