@@ -41,8 +41,12 @@ struct hv2d_fn {
       return res;
     } else {
       auto ovs = objective_vectors(set);
-      using ov_type = std::remove_cvref_t<std::ranges::range_value_t<decltype(ovs)>>;
-      auto sorted_set = std::vector<ov_type>(ovs.begin(), ovs.end());
+      using ov_type = std::array<T, 2>;
+      auto sorted_set = std::vector<ov_type>();
+      sorted_set.reserve(set.size());
+      for (auto const& v : ovs) {
+        sorted_set.push_back(ov_type{v[0], v[1]});
+      }
       std::ranges::sort(sorted_set, lexicographically_greater_fn{});
       return operator()(std::move(sorted_set), r, true);
     }
@@ -100,8 +104,12 @@ struct hv3d_fn {
       return v;
     } else {
       auto ovs = objective_vectors(set);
-      using ov_type = std::remove_cvref_t<std::ranges::range_value_t<decltype(ovs)>>;
-      auto sorted_set = std::vector<ov_type>(ovs.begin(), ovs.end());
+      using ov_type = std::array<T, 3>;
+      auto sorted_set = std::vector<ov_type>();
+      sorted_set.reserve(set.size());
+      for (auto const& v : ovs) {
+        sorted_set.push_back(ov_type{v[0], v[1], v[2]});
+      }
       std::ranges::sort(sorted_set, lexicographically_greater_fn{});
       return operator()(std::move(sorted_set), r, true);
     }
@@ -139,11 +147,12 @@ struct hvwfg_fn {
   template <is_objective_vector_set S, is_or_has_objective_vector V>
   [[nodiscard]] constexpr auto limitset(S const& set, V const& v) const {
     auto const& ov = objective_vector(v);
-    using ov_type = std::vector<T>;
+    auto const& ovs = objective_vectors(set);
+    using ov_type = std::ranges::range_value_t<decltype(ovs)>;
     std::vector<ov_type> tmp;
     tmp.reserve(set.size());
     auto res = flat_minimal_set<ov_type>(std::move(tmp));
-    for (auto const& p : objective_vectors(set)) {
+    for (auto const& p : ovs) {
       auto aux = ov_type();
       aux.reserve(p.size());
       std::transform(ov.begin(), ov.end(), p.begin(), std::back_inserter(aux),
@@ -158,26 +167,32 @@ struct hvwfg_fn {
     return c * operator()(v, r) - this->wfg(limitset(set, v), r, c);
   }
 
+  // TODO this currently does not support array like containers.
   template <is_objective_vector_set S, is_objective_vector R>
   [[nodiscard]] constexpr auto wfg(S const& set, R const& r, T c) const -> T {
     auto size = r.size();
     if (size == 2) {
       return c * hv2d<T>(set, r, true);
     } else if (size == 3) {
-      return c * hv3d<T>(set, r);
+      return c * hv3d<T>(set, r, true);
     } else {
-      auto newr = std::vector<T>(r.begin() + 1, r.end());
-      using new_ov_type = std::vector<T>;
-      auto tmp = std::vector<new_ov_type>();
+      auto ovs = objective_vectors(set);
+      using ov_type = std::ranges::range_value_t<decltype(ovs)>;
+
+      auto tmp = std::vector<ov_type>();
       tmp.reserve(set.size());
-      auto newset = flat_minimal_set<new_ov_type>(std::move(tmp));
+      auto newset = flat_minimal_set<ov_type>(std::move(tmp));
+
+      auto newr = ov_type(r.begin() + 1, r.end());
+
       auto v = T{0};
-      for (auto const& p : set) {
+      for (auto const& p : ovs) {
         auto newc = c * (p[0] - r[0]);
-        auto newp = new_ov_type(p.begin() + 1, p.end());
+        auto newp = ov_type(p.begin() + 1, p.end());
         v += this->exclhv(newset, newp, newr, newc);
         newset.insert(std::move(newp));
       }
+
       return v;
     }
   }
