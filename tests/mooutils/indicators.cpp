@@ -249,14 +249,14 @@ TEST_CASE("set hv results", "[indicators][hv]") {
     // Base hv function
     REQUIRE(mooutils::hv<result_type>(hvdata.points, hvdata.refp) == hvdata.hv);
     // Dynamic hv structs
-    auto hvs = mooutils::hvwfg_container<result_type>(hvdata.refp);
+    auto hvs = mooutils::hvwfg_container<result_type, decltype(hvdata.refp)>(hvdata.refp);
     REQUIRE(test_hv_struct(hvs, hvdata) == true);
     if (hvdata.m == 2) {
-      auto hv2d = mooutils::hv2d_container<result_type>(hvdata.refp);
+      auto hv2d = mooutils::hv2d_container<result_type, decltype(hvdata.refp)>(hvdata.refp);
       REQUIRE(test_hv_struct(hv2d, hvdata) == true);
     }
     if (hvdata.m == 3) {
-      auto hv3d = mooutils::hv3dplus_container<result_type>(hvdata.refp);
+      auto hv3d = mooutils::hv3dplus_container<result_type, decltype(hvdata.refp)>(hvdata.refp);
       REQUIRE(test_hv_struct(hv3d, hvdata) == true);
     }
   }

@@ -186,9 +186,9 @@ struct hvwfg_fn {
       auto newr = std::span(r.begin() + 1, r.end());
 
       auto v = T{0};
-      for (auto& p : ovs) {
+      for (auto const& p : ovs) {
         auto newc = c * (p[0] - r[0]);
-        // TODO See if we could use a std::span to avoid copying
+        // TODO See if we can use a std::span to avoid copying
         auto newp = ov_type(p.begin() + 1, p.end());
         v += this->exclhv(newset, newp, newr, newc);
         newset.insert(std::move(newp));
@@ -228,13 +228,26 @@ struct hv_fn {
 template <typename T>
 inline constexpr hv_fn<T> hv;
 
+template <typename Value, typename Solution>
+class indicator_container {
+ public:
+  // Get the current indicator value.
+  virtual auto value() const -> Value = 0;
+
+  // Insert a new solution into the container.
+  virtual auto insert(Solution s) -> Value = 0;
+
+  // Find the contribution of a solution.
+  virtual auto contribution(Solution const& s) const -> Value = 0;
+};
+
 // Class to keep the up to date hypervolume of a set of non-dominated
 // objective vectors using the WFG algorithm.
 //
 // TODO Allow removing points
 // TODO Allow initializing with multiple points at once
 template <typename Value, typename ObjectiveVector = std::vector<Value>>
-class [[nodiscard]] hvwfg_container : hvwfg_fn<Value> {
+class [[nodiscard]] hvwfg_container final : indicator_container<Value, ObjectiveVector>, hvwfg_fn<Value> {
  public:
   using value_type = Value;
   using objective_vector_type = ObjectiveVector;
@@ -252,9 +265,8 @@ class [[nodiscard]] hvwfg_container : hvwfg_fn<Value> {
   }
 
   // Get the contribution of a new vector w.r.t. to the current set
-  template <is_objective_vector V>
-  [[nodiscard]] constexpr auto contribution(V const& v) const -> value_type {
-    if (v[0] <= m_ref[0] || v[1] <= m_ref[1]) {
+  [[nodiscard]] constexpr auto contribution(objective_vector_type const& v) const -> value_type {
+    if (!mooutils::strictly_dominates(v, m_ref)) {
       return 0;
     } else {
       return this->exclhv(m_set, v, m_ref, 1);
@@ -262,15 +274,10 @@ class [[nodiscard]] hvwfg_container : hvwfg_fn<Value> {
   }
 
   // Inserts a new objective vector and returns its contribution
-  template <is_objective_vector V>
-  constexpr auto insert(V&& v) -> value_type {
+  constexpr auto insert(objective_vector_type v) -> value_type {
     auto hvc = contribution(v);
     if (hvc > 0) {
-      if constexpr (std::constructible_from<typename set_type::value_type, V>) {
-        m_set.insert(std::forward<V>(v));
-      } else {
-        m_set.insert(objective_vector_type(v.begin(), v.end()));
-      }
+      m_set.insert(std::move(v));
       m_hv += hvc;
     }
     return hvc;
@@ -283,7 +290,7 @@ class [[nodiscard]] hvwfg_container : hvwfg_fn<Value> {
 };
 
 template <typename Value, typename ObjectiveVector = std::array<Value, 2>>
-class [[nodiscard]] hv2d_container {
+class [[nodiscard]] hv2d_container : indicator_container<Value, ObjectiveVector> {
   struct Cmp {
     template <typename Lhs, typename Rhs>
     [[nodiscard]] constexpr auto operator()(Rhs const& a, Lhs const& b) const -> bool {
@@ -294,22 +301,23 @@ class [[nodiscard]] hv2d_container {
  public:
   using value_type = Value;
   using objective_vector_type = ObjectiveVector;
+  using objective_vector_value_type = typename ObjectiveVector::value_type;
   using set_type = std::vector<objective_vector_type>;
 
   template <typename R>
   constexpr explicit hv2d_container(R&& r)
-      : m_hv(0)
-      , m_set{{std::numeric_limits<value_type>::max(), r[1]}, {r[0], std::numeric_limits<value_type>::max()}}
-      , m_ref{r[0], r[1]} {}
+      : m_ref{r[0], r[1]}
+      , m_hv(0)
+      , m_set{{std::numeric_limits<objective_vector_value_type>::max(), r[1]},
+              {r[0], std::numeric_limits<objective_vector_value_type>::max()}} {}
 
   // Get the current hypervolume value
-  [[nodiscard]] constexpr auto value() const {
+  [[nodiscard]] constexpr auto value() const -> value_type {
     return m_hv;
   }
 
   // Get the contribution of a new vector w.r.t. to the current set
-  template <is_objective_vector V>
-  [[nodiscard]] constexpr auto contribution(V const& v) const -> value_type {
+  [[nodiscard]] constexpr auto contribution(objective_vector_type const& v) const -> value_type {
     assert(v.size() == 2);
     if (v[0] <= m_ref[0] || v[1] <= m_ref[1]) {
       return 0;
@@ -334,8 +342,7 @@ class [[nodiscard]] hv2d_container {
   }
 
   // Get the contribution of a new vector w.r.t. to the current set
-  template <is_objective_vector V>
-  constexpr auto insert(V&& v) -> value_type {
+  constexpr auto insert(objective_vector_type v) -> value_type {
     assert(v.size() == 2);
     if (v[0] <= m_ref[0] || v[1] <= m_ref[1]) {
       return 0;
@@ -374,9 +381,9 @@ class [[nodiscard]] hv2d_container {
   }
 
  private:
+  objective_vector_type m_ref;
   value_type m_hv;
   set_type m_set;
-  objective_vector_type m_ref;
 };
 
 /// HV3D+ container based on "A. P. Guerreiro and C. M. Fonseca,
@@ -393,7 +400,7 @@ class [[nodiscard]] hv2d_container {
 //
 // TODO Allow for a custom allocator
 template <typename Value, typename ObjectiveVector = std::array<Value, 3>>
-class [[nodiscard]] hv3dplus_container {
+class [[nodiscard]] hv3dplus_container : indicator_container<Value, ObjectiveVector> {
  public:
   using value_type = Value;
   using objective_vector_type = ObjectiveVector;
@@ -467,8 +474,7 @@ class [[nodiscard]] hv3dplus_container {
   }
 
   // Get the contribution of a new vector w.r.t. to the current set
-  template <is_objective_vector V>
-  [[nodiscard]] constexpr auto contribution(V const& u) const -> value_type {
+  [[nodiscard]] constexpr auto contribution(objective_vector_type const& u) const -> value_type {
     // Check if u is dominated by any point in q
     for (auto it = m_set; it != NULL && it->z >= u[2]; it = it->next) {
       if (it->x >= u[0] && it->y >= u[1]) {
@@ -575,8 +581,7 @@ class [[nodiscard]] hv3dplus_container {
   }
 
   // Inserts a new objective vector and returns its contribution
-  template <is_objective_vector V>
-  constexpr auto insert(V const& p) -> value_type {
+  constexpr auto insert(objective_vector_type p) -> value_type {
     auto hvc = contribution(p);
     if (hvc == 0) {
       return 0;
