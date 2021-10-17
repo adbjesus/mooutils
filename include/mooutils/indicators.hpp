@@ -231,6 +231,9 @@ inline constexpr hv_fn<T> hv;
 template <typename Value, typename Solution>
 class indicator_container {
  public:
+  using value_type = Value;
+  using solution_type = Solution;
+
   // Get the current indicator value.
   virtual auto value() const -> Value = 0;
 
