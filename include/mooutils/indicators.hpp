@@ -250,7 +250,7 @@ class indicator_container {
 // TODO Allow removing points
 // TODO Allow initializing with multiple points at once
 template <typename Value, typename ObjectiveVector = std::vector<Value>>
-class [[nodiscard]] hvwfg_container final : indicator_container<Value, ObjectiveVector>, hvwfg_fn<Value> {
+class [[nodiscard]] hvwfg_container final : public indicator_container<Value, ObjectiveVector>, hvwfg_fn<Value> {
  public:
   using value_type = Value;
   using objective_vector_type = ObjectiveVector;
@@ -293,7 +293,7 @@ class [[nodiscard]] hvwfg_container final : indicator_container<Value, Objective
 };
 
 template <typename Value, typename ObjectiveVector = std::array<Value, 2>>
-class [[nodiscard]] hv2d_container : indicator_container<Value, ObjectiveVector> {
+class [[nodiscard]] hv2d_container : public indicator_container<Value, ObjectiveVector> {
   struct Cmp {
     template <typename Lhs, typename Rhs>
     [[nodiscard]] constexpr auto operator()(Rhs const& a, Lhs const& b) const -> bool {
@@ -403,7 +403,7 @@ class [[nodiscard]] hv2d_container : indicator_container<Value, ObjectiveVector>
 //
 // TODO Allow for a custom allocator
 template <typename Value, typename ObjectiveVector = std::array<Value, 3>>
-class [[nodiscard]] hv3dplus_container : indicator_container<Value, ObjectiveVector> {
+class [[nodiscard]] hv3dplus_container : public indicator_container<Value, ObjectiveVector> {
  public:
   using value_type = Value;
   using objective_vector_type = ObjectiveVector;
