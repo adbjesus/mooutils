@@ -236,7 +236,7 @@ template <typename HVStruct, typename HVData>
 
 // Note, the test cases in the TEST_RESOURCES_DIR should be such that
 // the individual values of the points fit in a 16-bit signed integer,
-// and that the hypervolume fits in a 64-bit signed integer.
+// and the hypervolume fits in a 64-bit signed integer.
 TEST_CASE("set hv results", "[indicators][hv]") {
   auto datadir = std::filesystem::path(TEST_RESOURCES_DIR) / "hvdata" / "data";
 
@@ -248,16 +248,24 @@ TEST_CASE("set hv results", "[indicators][hv]") {
     auto hvdata = HypervolumeDataset(p);
     // Base hv function
     REQUIRE(mooutils::hv<result_type>(hvdata.points, hvdata.refp) == hvdata.hv);
-    // Dynamic hv structs
-    auto hvs = mooutils::hvwfg_container<result_type, decltype(hvdata.refp)>(hvdata.refp);
-    REQUIRE(test_hv_struct(hvs, hvdata) == true);
-    if (hvdata.m == 2) {
-      auto hv2d = mooutils::hv2d_container<result_type, decltype(hvdata.refp)>(hvdata.refp);
-      REQUIRE(test_hv_struct(hv2d, hvdata) == true);
+    if (hvdata.m <= 3) {
+      // Also test hvwfg for cases where m=2 and m=3
+      REQUIRE(mooutils::hvwfg<result_type>(hvdata.points, hvdata.refp) == hvdata.hv);
     }
-    if (hvdata.m == 3) {
-      auto hv3d = mooutils::hv3dplus_container<result_type, decltype(hvdata.refp)>(hvdata.refp);
+
+    // Incremental hv structs
+    if (hvdata.m == 2) {
+      auto hv2d = mooutils::incremental_hv2d<result_type>(hvdata.refp[0], hvdata.refp[1]);
+      REQUIRE(test_hv_struct(hv2d, hvdata) == true);
+    } else if (hvdata.m == 3) {
+      auto hv3d = mooutils::incremental_hv3dplus<result_type>(hvdata.refp[0], hvdata.refp[1], hvdata.refp[2]);
       REQUIRE(test_hv_struct(hv3d, hvdata) == true);
     }
+    auto hvwfg = mooutils::incremental_hvwfg<result_type, decltype(hvdata.refp)>(hvdata.refp);
+    REQUIRE(test_hv_struct(hvwfg, hvdata) == true);
+
+    // General incremental hv struct
+    auto inc_hv = mooutils::incremental_hv<result_type, decltype(hvdata.refp)>(hvdata.refp);
+    REQUIRE(test_hv_struct(inc_hv, hvdata) == true);
   }
 }

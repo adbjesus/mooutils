@@ -33,10 +33,6 @@ class base_set {
   base_set()
       : c() {}
 
-  base_set(base_set const& other) = default;
-
-  base_set(base_set&& other) = default;
-
   explicit base_set(Container const& cont)
       : c(cont) {}
 

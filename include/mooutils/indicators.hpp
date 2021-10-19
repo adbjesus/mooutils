@@ -12,6 +12,7 @@
 #include <set>
 #include <span>
 #include <type_traits>
+#include <variant>
 #include <vector>
 
 namespace mooutils {
@@ -228,72 +229,79 @@ struct hv_fn {
 template <typename T>
 inline constexpr hv_fn<T> hv;
 
+// Pure virtual class for quality indicator structures that allow for
+// incrementally updating a quality indicator with respect to the
+// insertion of new solutions into the set.
+//
+// TODO allow initializing with a set of existing solutions (and
+// optionally their hypervolume).
 template <typename Value, typename Solution>
-class indicator_container {
+class increment_indicator {
  public:
   using value_type = Value;
   using solution_type = Solution;
 
   // Get the current indicator value.
-  virtual auto value() const -> Value = 0;
-
-  // Insert a new solution into the container.
-  virtual auto insert(Solution s) -> Value = 0;
+  virtual auto value() const -> value_type = 0;
 
   // Find the contribution of a solution.
-  virtual auto contribution(Solution const& s) const -> Value = 0;
+  virtual auto contribution(solution_type const& s) const -> value_type = 0;
+
+  // Insert a new solution and return the contribution of that solution
+  // w.r.t. to the indicator value.
+  virtual auto insert(solution_type const& s) -> value_type = 0;
+  virtual auto insert(solution_type&& s) -> value_type = 0;
 };
 
-// Class to keep the up to date hypervolume of a set of non-dominated
-// objective vectors using the WFG algorithm.
-//
-// TODO Allow removing points
-// TODO Allow initializing with multiple points at once
 template <typename Value, typename ObjectiveVector = std::vector<Value>>
-class [[nodiscard]] hvwfg_container final : public indicator_container<Value, ObjectiveVector>, hvwfg_fn<Value> {
+class [[nodiscard]] incremental_hvwfg : hvwfg_fn<Value> {
  public:
   using value_type = Value;
   using objective_vector_type = ObjectiveVector;
-  using set_type = unordered_minimal_set<objective_vector_type>;
 
-  template <typename R>
-  constexpr explicit hvwfg_container(R&& r)
-      : m_hv(0)
-      , m_set()
-      , m_ref(r.begin(), r.end()) {}
+  template <typename... ReferenceArgs>
+  constexpr explicit incremental_hvwfg(ReferenceArgs&&... reference_args)
+      : m_value(0)
+      , m_reference(std::forward<ReferenceArgs>(reference_args)...)
+      , m_solution_set() {}
 
-  // Get the current hypervolume value
+  constexpr incremental_hvwfg(incremental_hvwfg const& other) = default;
+  constexpr incremental_hvwfg(incremental_hvwfg&& other) = default;
+  constexpr incremental_hvwfg& operator=(incremental_hvwfg const& other) = default;
+  constexpr incremental_hvwfg& operator=(incremental_hvwfg&& other) = default;
+  constexpr ~incremental_hvwfg() = default;
+
   [[nodiscard]] constexpr auto value() const -> value_type {
-    return m_hv;
+    return m_value;
   }
 
-  // Get the contribution of a new vector w.r.t. to the current set
-  [[nodiscard]] constexpr auto contribution(objective_vector_type const& v) const -> value_type {
-    if (!mooutils::strictly_dominates(v, m_ref)) {
+  template <typename S>
+  [[nodiscard]] constexpr auto contribution(S const& s) const -> value_type {
+    if (!mooutils::strictly_dominates(s, m_reference)) {
       return 0;
     } else {
-      return this->exclhv(m_set, v, m_ref, 1);
+      return this->exclhv(m_solution_set, s, m_reference, 1);
     }
   }
 
-  // Inserts a new objective vector and returns its contribution
-  constexpr auto insert(objective_vector_type v) -> value_type {
-    auto hvc = contribution(v);
-    if (hvc > 0) {
-      m_set.insert(std::move(v));
-      m_hv += hvc;
+  template <typename S>
+  constexpr auto insert(S&& s) -> value_type {
+    auto c = contribution(s);
+    if (c > 0) {
+      m_solution_set.insert(std::forward<S>(mooutils::objective_vector(s)));
+      m_value += c;
     }
-    return hvc;
+    return c;
   }
 
  private:
-  value_type m_hv;
-  set_type m_set;
-  objective_vector_type m_ref;
+  value_type m_value;
+  objective_vector_type m_reference;
+  unordered_minimal_set<objective_vector_type> m_solution_set;
 };
 
-template <typename Value, typename ObjectiveVector = std::array<Value, 2>>
-class [[nodiscard]] hv2d_container : public indicator_container<Value, ObjectiveVector> {
+template <typename Value>
+class [[nodiscard]] incremental_hv2d {
   struct Cmp {
     template <typename Lhs, typename Rhs>
     [[nodiscard]] constexpr auto operator()(Rhs const& a, Lhs const& b) const -> bool {
@@ -303,90 +311,95 @@ class [[nodiscard]] hv2d_container : public indicator_container<Value, Objective
 
  public:
   using value_type = Value;
-  using objective_vector_type = ObjectiveVector;
-  using objective_vector_value_type = typename ObjectiveVector::value_type;
-  using set_type = std::vector<objective_vector_type>;
+  using objective_vector_type = std::array<value_type, 2>;
+  using objective_vector_value_type = typename objective_vector_type::value_type;
 
-  template <typename R>
-  constexpr explicit hv2d_container(R&& r)
-      : m_ref{r[0], r[1]}
-      , m_hv(0)
-      , m_set{{std::numeric_limits<objective_vector_value_type>::max(), r[1]},
-              {r[0], std::numeric_limits<objective_vector_value_type>::max()}} {}
+  template <typename... ReferenceArgs>
+  constexpr explicit incremental_hv2d(ReferenceArgs&&... reference_args)
+      : m_value{0}
+      , m_reference{std::forward<ReferenceArgs>(reference_args)...}
+      , m_solution_set{{std::numeric_limits<objective_vector_value_type>::max(), m_reference[1]},
+                       {m_reference[0], std::numeric_limits<objective_vector_value_type>::max()}} {}
 
-  // Get the current hypervolume value
+  constexpr incremental_hv2d(incremental_hv2d&& other) = default;
+  constexpr incremental_hv2d(incremental_hv2d const& other) = default;
+  constexpr incremental_hv2d& operator=(incremental_hv2d&& other) = default;
+  constexpr incremental_hv2d& operator=(incremental_hv2d const& other) = default;
+  constexpr ~incremental_hv2d() = default;
+
   [[nodiscard]] constexpr auto value() const -> value_type {
-    return m_hv;
+    return m_value;
   }
 
-  // Get the contribution of a new vector w.r.t. to the current set
-  [[nodiscard]] constexpr auto contribution(objective_vector_type const& v) const -> value_type {
-    assert(v.size() == 2);
-    if (v[0] <= m_ref[0] || v[1] <= m_ref[1]) {
+  template <typename S>
+  [[nodiscard]] constexpr auto contribution(S const& s) const -> value_type {
+    if (!mooutils::strictly_dominates(s, m_reference)) {
       return 0;
     }
 
-    auto it = std::prev(std::ranges::upper_bound(m_set, v, Cmp{}));
-    // By definition v[0] <= (*it)[0], so we just need to check v[1]
-    if (v[1] <= (*it)[1]) {
+    auto const& ov = mooutils::objective_vector(s);
+    auto it = std::prev(std::ranges::upper_bound(m_solution_set, ov, Cmp{}));
+    // By definition objective_vector(*std::prev(it))[0] >= objective_vector(s)[0],
+    // so we check weak dominance w.r.t. to [1]
+    if ((*it)[1] >= s[1]) {
       return 0;
     }
 
-    auto v0 = value_type{v[0]};
+    auto s0 = value_type{ov[0]};
+    auto s1 = value_type{ov[1]};
     auto r1 = value_type{(*it)[1]};
     auto res = value_type{0};
     do {
       ++it;
-      res += (v0 - (*it)[0]) * (v[1] - r1);
-      v0 = (*it)[0];
+      res += (s0 - (*it)[0]) * (s1 - r1);
+      s0 = (*it)[0];
       r1 = (*it)[1];
-    } while (v[1] >= (*it)[1]);
+    } while (s1 >= (*it)[1]);
     return res;
   }
 
-  // Get the contribution of a new vector w.r.t. to the current set
-  constexpr auto insert(objective_vector_type v) -> value_type {
-    assert(v.size() == 2);
-    if (v[0] <= m_ref[0] || v[1] <= m_ref[1]) {
+  template <typename S>
+  constexpr auto insert(S const& s) -> value_type {
+    if (!mooutils::strictly_dominates(s, m_reference)) {
       return 0;
     }
 
-    auto it = std::prev(std::ranges::upper_bound(m_set, v, Cmp{}));
-    // By definition v[0] <= (*it)[0], so we just need to check v[1]
-    if (v[1] <= (*it)[1]) {
+    auto const& ov = mooutils::objective_vector(s);
+    auto it = std::prev(std::ranges::upper_bound(m_solution_set, ov, Cmp{}));
+    // By definition objective_vector(*std::prev(it))[0] >= objective_vector(s)[0],
+    // so we check weak dominance w.r.t. to [1]
+    if ((*it)[1] >= s[1]) {
       return 0;
     }
 
     auto first_erase = std::next(it);
 
-    auto v0 = value_type{v[0]};
+    auto s0 = value_type{ov[0]};
+    auto s1 = value_type{ov[1]};
     auto r1 = value_type{(*it)[1]};
     auto res = value_type{0};
     do {
       ++it;
-      res += (v0 - (*it)[0]) * (v[1] - r1);
-      v0 = (*it)[0];
+      res += (s0 - (*it)[0]) * (s1 - r1);
+      s0 = (*it)[0];
       r1 = (*it)[1];
-    } while (v[1] >= (*it)[1]);
+    } while (s1 >= (*it)[1]);
 
-    auto last_erase = it;
-    if (first_erase != last_erase) {
-      (*first_erase)[0] = v[0];
-      (*first_erase)[1] = v[1];
-      m_set.erase(++first_erase, last_erase);
+    if (first_erase != it) {
+      *first_erase = objective_vector_type{ov[0], ov[1]};
+      m_solution_set.erase(++first_erase, it);
     } else {
-      m_set.insert(last_erase, objective_vector_type{v[0], v[1]});
+      m_solution_set.insert(it, objective_vector_type{ov[0], ov[1]});
     }
 
-    m_hv += res;
+    m_value += res;
 
     return res;
   }
 
- private:
-  objective_vector_type m_ref;
-  value_type m_hv;
-  set_type m_set;
+  value_type m_value;
+  objective_vector_type m_reference;
+  std::vector<objective_vector_type> m_solution_set;
 };
 
 /// HV3D+ container based on "A. P. Guerreiro and C. M. Fonseca,
@@ -402,16 +415,18 @@ class [[nodiscard]] hv2d_container : public indicator_container<Value, Objective
 // leaks, so the implementation seems to be sound.
 //
 // TODO Allow for a custom allocator
-template <typename Value, typename ObjectiveVector = std::array<Value, 3>>
-class [[nodiscard]] hv3dplus_container : public indicator_container<Value, ObjectiveVector> {
+//
+// TODO Keep actual solutions instead of only the objective points (to
+// be consistent with other indicator sets).
+template <typename Value>
+class [[nodiscard]] incremental_hv3dplus {
  public:
   using value_type = Value;
-  using objective_vector_type = ObjectiveVector;
-  using objective_vector_value_type = typename ObjectiveVector::value_type;
+  using objective_vector_type = std::array<value_type, 3>;
 
  private:
   struct Point {
-    Point(objective_vector_value_type _x, objective_vector_value_type _y, objective_vector_value_type _z)
+    Point(value_type _x, value_type _y, value_type _z)
         : x(_x)
         , y(_y)
         , z(_z)
@@ -422,9 +437,9 @@ class [[nodiscard]] hv3dplus_container : public indicator_container<Value, Objec
         , lprev(NULL)
         , lnext(NULL) {}
 
-    objective_vector_value_type x;
-    objective_vector_value_type y;
-    objective_vector_value_type z;
+    value_type x;
+    value_type y;
+    value_type z;
     Point* prev;
     Point* next;
     Point* cprev;
@@ -434,52 +449,64 @@ class [[nodiscard]] hv3dplus_container : public indicator_container<Value, Objec
   };
 
  public:
-  using set_type = Point*;
-
-  template <is_objective_vector V>
-  constexpr explicit hv3dplus_container(V&& r)
-      : m_hv(0)
-      , m_ref{r[0], r[1], r[2]} {
-    auto a = new Point(r[0], std::numeric_limits<objective_vector_value_type>::max(),
-                       std::numeric_limits<objective_vector_value_type>::max());
-    auto b = new Point(std::numeric_limits<objective_vector_value_type>::max(), r[1],
-                       std::numeric_limits<objective_vector_value_type>::max());
+  template <typename... ReferenceArgs>
+  constexpr explicit incremental_hv3dplus(ReferenceArgs&&... reference_args)
+      : m_value{0}
+      , m_reference{std::forward<ReferenceArgs>(reference_args)...} {
+    auto a = new Point(m_reference[0], std::numeric_limits<value_type>::max(), std::numeric_limits<value_type>::max());
+    auto b = new Point(std::numeric_limits<value_type>::max(), m_reference[1], std::numeric_limits<value_type>::max());
     a->next = b;
     b->prev = a;
     b->cprev = a;
-    m_set = a;
+    m_solution_set = a;
   }
 
   // TODO Copy constructor is not trivial to implement, but also not
-  // very important at the moment. I feel like there is the need to
-  // track old and new pointers, to correctly copy all of prev, next,
-  // cprev, cnext, lprev, lnext.
-  constexpr hv3dplus_container(hv3dplus_container const& other) = delete;
+  // very important at the moment. I think there is the need to track
+  // old and new pointers, to correctly copy all of prev, next, cprev,
+  // cnext, lprev, lnext.
+  constexpr incremental_hv3dplus(incremental_hv3dplus const& other) = delete;
+  constexpr incremental_hv3dplus& operator=(incremental_hv3dplus const& other) = delete;
 
-  constexpr hv3dplus_container(hv3dplus_container&& other) noexcept
-      : m_hv(std::move(other.m_hv))
-      , m_set(other.m_set)
-      , m_ref(std::move(other.m_ref)) {
-    other.m_set = NULL;
+  constexpr incremental_hv3dplus(incremental_hv3dplus&& other) noexcept
+      : m_value(std::move(other.m_value))
+      , m_reference(std::move(other.m_reference))
+      , m_solution_set(other.m_solution_set) {
+    other.m_solution_set = NULL;
   }
 
-  constexpr ~hv3dplus_container() {
-    while (m_set != NULL) {
-      auto n = m_set->next;
-      delete m_set;
-      m_set = n;
+  constexpr incremental_hv3dplus& operator=(incremental_hv3dplus&& other) noexcept {
+    while (m_solution_set != NULL) {
+      auto n = m_solution_set->next;
+      delete m_solution_set;
+      m_solution_set = n;
+    }
+    m_value = std::move(other.m_value);
+    m_reference = std::move(other.m_reference);
+    m_solution_set = std::move(other.m_solution_set);
+    other.m_solution_set = NULL;
+    return *this;
+  }
+
+  constexpr ~incremental_hv3dplus() {
+    while (m_solution_set != NULL) {
+      auto n = m_solution_set->next;
+      delete m_solution_set;
+      m_solution_set = n;
     }
   }
 
   // Get the current hypervolume value
   [[nodiscard]] constexpr auto value() const -> value_type {
-    return m_hv;
+    return m_value;
   }
 
-  // Get the contribution of a new vector w.r.t. to the current set
-  [[nodiscard]] constexpr auto contribution(objective_vector_type const& u) const -> value_type {
+  template <typename S>
+  [[nodiscard]] constexpr auto contribution(S const& s) const -> value_type {
+    auto const& u = mooutils::objective_vector(s);
+
     // Check if u is dominated by any point in q
-    for (auto it = m_set; it != NULL && it->z >= u[2]; it = it->next) {
+    for (auto it = m_solution_set; it != NULL && it->z >= u[2]; it = it->next) {
       if (it->x >= u[0] && it->y >= u[1]) {
         return 0;
       }
@@ -515,15 +542,15 @@ class [[nodiscard]] hv3dplus_container : public indicator_container<Value, Objec
     };
 
     // Find outer delimeters
-    Point* cprev = m_set;
-    Point* cnext = m_set->next;
+    Point* cprev = m_solution_set;
+    Point* cnext = m_solution_set->next;
 
     cprev->lprev = NULL;
     cprev->lnext = cnext;
     cnext->lprev = cprev;
     cnext->lnext = NULL;
 
-    auto p = m_set->next->next;
+    auto p = m_solution_set->next->next;
     for (; p != NULL && p->z >= u[2]; p = p->next) {
       if (p->x < u[0] && p->y > u[1]) {
         if (p->x > cprev->x || (p->x == cprev->x && p->y > cprev->y)) {
@@ -575,7 +602,7 @@ class [[nodiscard]] hv3dplus_container : public indicator_container<Value, Objec
     }
 
     if (p == NULL) {
-      v += a * (z - m_ref[2]);
+      v += a * (z - m_reference[2]);
     } else {
       v += a * (z - p->z);
     }
@@ -583,13 +610,15 @@ class [[nodiscard]] hv3dplus_container : public indicator_container<Value, Objec
     return v;
   }
 
-  // Inserts a new objective vector and returns its contribution
-  constexpr auto insert(objective_vector_type p) -> value_type {
-    auto hvc = contribution(p);
+  template <typename S>
+  constexpr auto insert(S&& s) -> value_type {
+    auto hvc = contribution(s);
     if (hvc == 0) {
       return 0;
     }
-    m_hv += hvc;
+    m_value += hvc;
+
+    auto const& p = mooutils::objective_vector(s);
 
     // Utility functions (TODO maybe move to class private methods)
     auto try_update_cprev = [](Point* u, Point* v) {
@@ -619,7 +648,7 @@ class [[nodiscard]] hv3dplus_container : public indicator_container<Value, Objec
 
     auto u = new Point(p[0], p[1], p[2]);
 
-    for (auto it = m_set; it != NULL; it = it->next) {
+    for (auto it = m_solution_set; it != NULL; it = it->next) {
       if (m_lex_ge(it, u)) {
         try_update_cnext(u, it);
         try_update_cprev(u, it);
@@ -629,7 +658,7 @@ class [[nodiscard]] hv3dplus_container : public indicator_container<Value, Objec
       }
     }
 
-    for (auto it = m_set->next->next; it != NULL;) {
+    for (auto it = m_solution_set->next->next; it != NULL;) {
       if (custom_weakly_dominates(u, it)) {
         if (it->next != NULL) {
           it->next->prev = it->prev;
@@ -647,8 +676,8 @@ class [[nodiscard]] hv3dplus_container : public indicator_container<Value, Objec
     }
 
     // Insert u in q
-    auto prev = m_set->next;
-    for (auto it = m_set->next->next; it != NULL; it = it->next) {
+    auto prev = m_solution_set->next;
+    for (auto it = m_solution_set->next->next; it != NULL; it = it->next) {
       if (m_lex_ge(u, it)) {
         u->next = it;
         u->prev = prev;
@@ -666,14 +695,81 @@ class [[nodiscard]] hv3dplus_container : public indicator_container<Value, Objec
     return hvc;
   }
 
- private:
   auto m_lex_ge(Point* a, Point* b) {
     return (a->z > b->z || (a->z == b->z && (a->y > b->y || (a->y == b->y && a->x >= b->x))));
   }
 
-  value_type m_hv;
-  set_type m_set;
-  objective_vector_type m_ref;
+  value_type m_value;
+  objective_vector_type m_reference;
+  Point* m_solution_set;
+};
+
+template <typename Value, typename ObjectiveVector>
+class [[nodiscard]] incremental_hv {
+ public:
+  using value_type = Value;
+  using objective_vector_type = ObjectiveVector;
+
+  template <typename S>
+  incremental_hv(S&& s) {
+    auto const& ov = mooutils::objective_vector(s);
+    m_size = ov.size();
+    if (m_size < 2) {
+      throw("Size of objective vector must be at least 2");
+    } else if (m_size == 2) {
+      m_hv = decltype(m_hv)(std::in_place_index<1>, ov[0], ov[1]);
+      // m_hv.emplace<1>(ov[0], ov[1]);
+    } else if (m_size == 3) {
+      m_hv = decltype(m_hv)(std::in_place_index<2>, ov[0], ov[1], ov[2]);
+      // m_hv.emplace<2>(ov[0], ov[1], ov[2]);
+    } else {
+      m_hv = decltype(m_hv)(std::in_place_index<3>, ov);
+      // m_hv.emplace<3>(ov);
+    }
+  }
+
+  [[nodiscard]] constexpr auto value() const -> value_type {
+    if (m_size == 2) {
+      return std::get<1>(m_hv).value();
+    } else if (m_size == 3) {
+      return std::get<2>(m_hv).value();
+    } else {
+      return std::get<3>(m_hv).value();
+    }
+    return 0;
+  }
+
+  template <typename S>
+  [[nodiscard]] constexpr auto contribution(S const& s) const -> value_type {
+    if (m_size == 2) {
+      return std::get<1>(m_hv).contribution(s);
+    } else if (m_size == 3) {
+      return std::get<2>(m_hv).contribution(s);
+    } else {
+      return std::get<3>(m_hv).contribution(s);
+    }
+    return 0;
+  }
+
+  template <typename S>
+  constexpr auto insert(S&& s) -> value_type {
+    if (m_size == 2) {
+      return std::get<1>(m_hv).insert(std::forward<S>(s));
+    } else if (m_size == 3) {
+      return std::get<2>(m_hv).insert(std::forward<S>(s));
+    } else {
+      return std::get<3>(m_hv).insert(std::forward<S>(s));
+    }
+    return 0;
+  }
+
+ private:
+  using hv2_type = incremental_hv2d<value_type>;
+  using hv3_type = incremental_hv3dplus<value_type>;
+  using hvd_type = incremental_hvwfg<value_type, objective_vector_type>;
+
+  size_t m_size;
+  std::variant<std::monostate, hv2_type, hv3_type, hvd_type> m_hv;
 };
 
 }  // namespace mooutils

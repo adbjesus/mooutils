@@ -338,6 +338,18 @@ struct incomparable_fn {
 
 inline constexpr incomparable_fn incomparable;
 
+struct lexicographically_less_fn {
+  template <is_or_has_objective_vector V1, is_or_has_objective_vector V2>
+  auto operator()(V1 const& v1, V2 const& v2) const -> bool {
+    auto const& ov1 = objective_vector(v1);
+    auto const& ov2 = objective_vector(v2);
+    assert(ov1.size() == ov2.size());
+    return std::ranges::lexicographical_compare(ov1, ov2);
+  }
+};
+
+inline constexpr lexicographically_less_fn lexicographically_less;
+
 struct lexicographically_greater_fn {
   template <is_or_has_objective_vector V1, is_or_has_objective_vector V2>
   auto operator()(V1 const& v1, V2 const& v2) const -> bool {
@@ -349,5 +361,17 @@ struct lexicographically_greater_fn {
 };
 
 inline constexpr lexicographically_greater_fn lexicographically_greater;
+
+struct lexicographically_equivalent_fn {
+  template <is_or_has_objective_vector V1, is_or_has_objective_vector V2>
+  auto operator()(V1 const& v1, V2 const& v2) const -> bool {
+    auto const& ov1 = objective_vector(v1);
+    auto const& ov2 = objective_vector(v2);
+    assert(ov1.size() == ov2.size());
+    return std::ranges::equal(ov1, ov2);
+  }
+};
+
+inline constexpr lexicographically_equivalent_fn lexicographically_equivalent;
 
 }  // namespace mooutils
