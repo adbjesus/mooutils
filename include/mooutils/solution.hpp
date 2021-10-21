@@ -108,7 +108,7 @@ class constrained_solution : public base_decision_vector<DVec>,
 };
 
 // The following are views to get a particular vector of a solution.
-struct decision_vector_view {
+struct decision_vector_fn {
   template <is_decision_vector T>
   [[nodiscard]] constexpr auto operator()(T&& t) const -> T&& {
     return std::forward<T>(t);
@@ -120,9 +120,18 @@ struct decision_vector_view {
   }
 };
 
-inline constexpr decision_vector_view decision_vector;
+inline constexpr decision_vector_fn decision_vector;
 
-struct objective_vector_view {
+/**
+ * \brief Function object to get a reference to the objective vector of
+ * some object.
+ *
+ * This function object function allows to get a view to the objective
+ * vector of an object that follows is_objective_vector or
+ * has_objective_vector templates. There is also the function
+ * `objective_vector`.
+ */
+struct objective_vector_fn {
   template <is_objective_vector T>
   [[nodiscard]] constexpr auto operator()(T&& t) const -> T&& {
     return std::forward<T>(t);
@@ -134,9 +143,12 @@ struct objective_vector_view {
   }
 };
 
-inline constexpr objective_vector_view objective_vector;
+/**
+ * \brief A function
+ */
+inline constexpr objective_vector_fn objective_vector;
 
-struct constraint_vector_view {
+struct constraint_vector_fn {
   template <is_constraint_vector T>
   [[nodiscard]] constexpr auto operator()(T&& t) const -> T&& {
     return std::forward<T>(t);
@@ -148,36 +160,36 @@ struct constraint_vector_view {
   }
 };
 
-inline constexpr constraint_vector_view constraint_vector;
+inline constexpr constraint_vector_fn constraint_vector;
 
-// The following are views to get the vectors over a ranges. They take
+// The following are fn to get the vectors over a ranges. They take
 // the range of solutions, and a projection to get the corresponding
 // vector, which defaults to the ones previously described.
-struct decision_vectors_view {
-  template <typename Range, typename DVecView = decision_vector_view>
-  [[nodiscard]] constexpr auto operator()(Range&& r, DVecView&& dvec_view = {}) const {
-    return std::ranges::transform_view(std::forward<Range>(r), std::forward<DVecView>(dvec_view));
+struct decision_vectors_fn {
+  template <typename Range, typename DVecFn = decision_vector_fn>
+  [[nodiscard]] constexpr auto operator()(Range&& r, DVecFn&& dvec_fn = {}) const {
+    return std::ranges::transform_view(std::forward<Range>(r), std::forward<DVecFn>(dvec_fn));
   }
 };
 
-inline constexpr decision_vectors_view decision_vectors;
+inline constexpr decision_vectors_fn decision_vectors;
 
-struct objective_vectors_view {
-  template <typename Range, typename OVecView = objective_vector_view>
-  [[nodiscard]] constexpr auto operator()(Range&& r, OVecView&& ovec_view = {}) const {
-    return std::ranges::transform_view(std::forward<Range>(r), std::forward<OVecView>(ovec_view));
+struct objective_vectors_fn {
+  template <typename Range, typename OVecFn = objective_vector_fn>
+  [[nodiscard]] constexpr auto operator()(Range&& r, OVecFn&& ovec_fn = {}) const {
+    return std::ranges::transform_view(std::forward<Range>(r), std::forward<OVecFn>(ovec_fn));
   }
 };
 
-inline constexpr objective_vectors_view objective_vectors;
+inline constexpr objective_vectors_fn objective_vectors;
 
-struct constraint_vectors_view {
-  template <typename Range, typename CVecView = constraint_vector_view>
-  [[nodiscard]] constexpr auto operator()(Range&& r, CVecView&& cvec_view = {}) const {
-    return std::ranges::transform_view(std::forward<Range>(r), std::forward<CVecView>(cvec_view));
+struct constraint_vectors_fn {
+  template <typename Range, typename CVecFn = constraint_vector_fn>
+  [[nodiscard]] constexpr auto operator()(Range&& r, CVecFn&& cvec_fn = {}) const {
+    return std::ranges::transform_view(std::forward<Range>(r), std::forward<CVecFn>(cvec_fn));
   }
 };
 
-inline constexpr constraint_vectors_view constraint_vectors;
+inline constexpr constraint_vectors_fn constraint_vectors;
 
 }  // namespace mooutils

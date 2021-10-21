@@ -1,0 +1,12 @@
+find_package(Doxygen)
+
+set(DOXYGEN_COLLABORATION_GRAPH NO)
+set(DOXYGEN_QUIET YES)
+set(DOXYGEN_WARN_IF_UNDOCUMENTED NO)
+
+doxygen_add_docs(docs "${PROJECT_SOURCE_DIR}/include" ALL)
+
+install(
+  DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/html"
+  DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/mooutils"
+)

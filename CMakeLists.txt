@@ -13,7 +13,7 @@ project(MOOUTILS
 )
 
 # Project options
-option(MOOUTILS_BUILD_DOCS "Build the documentation" ON)
+option(MOOUTILS_BUILD_DOCS "Build the documentation" ${MOOUTILS_MASTER_PROJECT})
 option(MOOUTILS_DEVELOPMENT_BUILD "Builds tests, benchmarks, enable warnings, etc.." OFF)
 
 include(CMakeDependentOption)
@@ -87,7 +87,7 @@ install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/mooutils" DESTINATION ${CMAKE_I
 
 # Documentation
 if(MOOUTILS_BUILD_DOCS)
-  # TODO add_subdirectory(docs)
+  add_subdirectory(docs)
 endif()
 
 # Tests
@@ -102,39 +102,46 @@ endif()
 
 # PkgConfig file
 configure_file(
-  ${PROJECT_SOURCE_DIR}/cmake/mooutils.pc.in
-  ${PROJECT_BINARY_DIR}/mooutils.pc
+  "${PROJECT_SOURCE_DIR}/cmake/mooutils.pc.in"
+  "${PROJECT_BINARY_DIR}/mooutils.pc"
   @ONLY
 )
-install(FILES "${PROJECT_BINARY_DIR}/mooutils.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+install(
+  FILES "${PROJECT_BINARY_DIR}/mooutils.pc"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig"
+)
 
 # Export
-install(TARGETS mooutils
-        EXPORT mooutils-targets
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        )
+install(
+  TARGETS mooutils
+  EXPORT mooutils-targets
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
 
-install(EXPORT mooutils-targets
-        NAMESPACE mooutils::
-        FILE mooutils-targets.cmake
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mooutils
-        )
+install(
+  EXPORT mooutils-targets
+  NAMESPACE mooutils::
+  FILE mooutils-targets.cmake
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/mooutils"
+)
 
 include(CMakePackageConfigHelpers)
-configure_package_config_file(${PROJECT_SOURCE_DIR}/cmake/mooutils-config.cmake.in
+configure_package_config_file(
+  "${PROJECT_SOURCE_DIR}/cmake/mooutils-config.cmake.in"
   "${PROJECT_BINARY_DIR}/mooutils-config.cmake"
-  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mooutils
+  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/mooutils"
 )
 write_basic_package_version_file(
   "${PROJECT_BINARY_DIR}/mooutils-config-version.cmake"
   VERSION "${PROJECT_VERSION}"
   COMPATIBILITY SameMinorVersion
-  )
+)
 
-install(FILES ${PROJECT_BINARY_DIR}/mooutils-config.cmake
-              ${PROJECT_BINARY_DIR}/mooutils-config-version.cmake
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mooutils
-        )
+install(
+  FILES "${PROJECT_BINARY_DIR}/mooutils-config.cmake"
+        "${PROJECT_BINARY_DIR}/mooutils-config-version.cmake"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/mooutils"
+)

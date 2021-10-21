@@ -8,6 +8,9 @@ namespace mooutils {
 
 // clang-format off
 
+/**
+ * \brief Decision vector concept.
+ */
 template<typename T>
 concept is_decision_vector =
   std::ranges::sized_range<T> &&
