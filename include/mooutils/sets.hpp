@@ -380,40 +380,74 @@ class set : public base_set<set<Solution, Compare, Container>, Container> {
 
   template <typename S>
   constexpr auto insert_impl(S&& solution) -> iterator {
-    auto first = this->c.begin();
-    auto last = this->c.end();
-    auto mid1 = this->c.lower_bound(solution);
-    auto mid2 = mid1;
+    auto const& ov = objective_vector(solution);
+    if (ov.size() == 2) {
+      auto last = this->c.end();
+      auto it = this->c.lower_bound(solution);
+      auto jt = it;
 
-    // Check for equivalent first, since it can allow for breaking
-    // earlier
-    for (; mid2 != last; ++mid2) {
-      if (equivalent(solution, *mid2)) {
-        if (solution == *mid2) {
-          return last;
+      for (; jt != last; ++jt) {
+        if (equivalent(solution, *jt)) {
+          if (solution == *jt) {
+            return last;
+          }
+        } else {
+          break;
         }
-      } else {
-        break;
       }
-    }
-    if (mid1 != mid2) {
-      return this->c.emplace_hint(mid2, std::forward<S>(solution));
-    }
+      if (it != jt) {
+        return this->c.emplace_hint(jt, std::forward<S>(solution));
+      }
 
-    for (auto it = first; it != mid1; ++it) {
-      if (dominates(*it, solution)) {
+      if (it != last && dominates(*it, solution)) {
         return last;
       }
-    }
-    auto it = this->c.emplace_hint(mid2, std::forward<S>(solution));
-    for (auto jt = std::next(it); jt != this->c.end();) {
-      if (dominates(*it, *jt)) {
-        jt = this->c.erase(jt);
-      } else {
-        ++jt;
+      if (it != this->c.begin() && dominates(*std::prev(it), solution)) {
+        return last;
       }
+
+      it = this->c.emplace_hint(jt, std::forward<S>(solution));
+      last = this->c.end();
+      for (jt = std::next(it); jt != last && objective_vector(*it)[1] >= objective_vector(*jt)[1]; ++jt)
+        ;
+      this->c.erase(std::next(it), jt);
+      return it;
+    } else {
+      auto first = this->c.begin();
+      auto last = this->c.end();
+      auto mid1 = this->c.lower_bound(solution);
+      auto mid2 = mid1;
+
+      // Check for equivalent first, since it can allow for breaking
+      // earlier
+      for (; mid2 != last; ++mid2) {
+        if (equivalent(solution, *mid2)) {
+          if (solution == *mid2) {
+            return last;
+          }
+        } else {
+          break;
+        }
+      }
+      if (mid1 != mid2) {
+        return this->c.emplace_hint(mid2, std::forward<S>(solution));
+      }
+
+      for (auto it = first; it != mid1; ++it) {
+        if (dominates(*it, solution)) {
+          return last;
+        }
+      }
+      auto it = this->c.emplace_hint(mid2, std::forward<S>(solution));
+      for (auto jt = std::next(it); jt != this->c.end();) {
+        if (dominates(*it, *jt)) {
+          jt = this->c.erase(jt);
+        } else {
+          ++jt;
+        }
+      }
+      return it;
     }
-    return it;
   }
 
   template <typename S>
