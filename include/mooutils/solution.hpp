@@ -1,6 +1,7 @@
-#pragma once
+#ifndef MOOUTILS_SOLUTION_HPP_
+#define MOOUTILS_SOLUTION_HPP_
 
-#include <mooutils/concepts.hpp>
+#include "concepts.hpp"
 
 #include <vector>
 
@@ -193,3 +194,5 @@ struct constraint_vectors_fn {
 inline constexpr constraint_vectors_fn constraint_vectors;
 
 }  // namespace mooutils
+
+#endif

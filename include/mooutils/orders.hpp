@@ -1,7 +1,8 @@
-#pragma once
+#ifndef MOOUTILS_ORDERS_HPP_
+#define MOOUTILS_ORDERS_HPP_
 
-#include <mooutils/concepts.hpp>
-#include <mooutils/solution.hpp>
+#include "concepts.hpp"
+#include "solution.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -375,3 +376,5 @@ struct lexicographically_equivalent_fn {
 inline constexpr lexicographically_equivalent_fn lexicographically_equivalent;
 
 }  // namespace mooutils
+
+#endif

@@ -1,8 +1,9 @@
-#pragma once
+#ifndef MOOUTILS_INDICATORS_HPP_
+#define MOOUTILS_INDICATORS_HPP_
 
-#include <mooutils/concepts.hpp>
-#include <mooutils/orders.hpp>
-#include <mooutils/sets.hpp>
+#include "concepts.hpp"
+#include "orders.hpp"
+#include "sets.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -773,3 +774,5 @@ class [[nodiscard]] incremental_hv {
 };
 
 }  // namespace mooutils
+
+#endif

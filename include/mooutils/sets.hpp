@@ -1,8 +1,9 @@
-#pragma once
+#ifndef MOOUTILS_SETS_HPP_
+#define MOOUTILS_SETS_HPP_
 
-#include <mooutils/concepts.hpp>
-#include <mooutils/orders.hpp>
-#include <mooutils/solution.hpp>
+#include "concepts.hpp"
+#include "orders.hpp"
+#include "solution.hpp"
 
 #include <concepts>
 #include <iostream>
@@ -457,3 +458,5 @@ class set : public base_set<set<Solution, Compare, Container>, Container> {
 };
 
 }  // namespace mooutils
+
+#endif
