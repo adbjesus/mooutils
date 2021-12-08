@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MOOUTILS_QUEUES_HPP_
+#define MOOUTILS_QUEUES_HPP_
 
 #include <deque>
 #include <random>
@@ -149,3 +150,5 @@ class random_queue : public base_queue<random_queue<Solution, Rng, Container>, C
 };
 
 }  // namespace mooutils
+
+#endif

@@ -14,7 +14,7 @@
           pname = "mooutils";
           version = "0.1.0";
           src = self;
-          nativeBuildInputs = with pkgs; [ cmake ninja ];
+          nativeBuildInputs = with pkgs; [ cmake ninja doxygen ];
           buildInputs = with pkgs; [ catch2 ];
         };
         defaultPackage = self.packages.${system}.mooutils;

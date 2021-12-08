@@ -1,4 +1,5 @@
-#pragma once
+#ifndef MOOUTILS_CONCEPTS_HPP_
+#define MOOUTILS_CONCEPTS_HPP_
 
 #include <concepts>
 #include <ranges>
@@ -90,3 +91,5 @@ concept is_constraint_vector_set =
   is_or_has_constraint_vector<std::ranges::range_value_t<T>>;
 
 }  // namespace mooutils
+
+#endif
