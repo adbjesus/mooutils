@@ -626,7 +626,7 @@ class [[nodiscard]] incremental_hv3dplus {
       if (v->x < u->x && v->y > u->y) {
         if (u->cprev == NULL) {
           u->cprev = v;
-        } else if (v->x > u->cprev->x || (v->x == u->cprev->x && v->y > u->cprev->y)) {
+        } else if (v->x > u->cprev->x || (v->x == u->cprev->x && v->y >= u->cprev->y)) {
           u->cprev = v;
         }
       }
@@ -636,7 +636,7 @@ class [[nodiscard]] incremental_hv3dplus {
       if (v->x > u->x && v->y < u->y) {
         if (u->cnext == NULL) {
           u->cnext = v;
-        } else if (v->y > u->cnext->y || (v->y == u->cnext->y && v->x > u->cnext->x)) {
+        } else if (v->y > u->cnext->y || (v->y == u->cnext->y && v->x >= u->cnext->x)) {
           u->cnext = v;
         }
       }
