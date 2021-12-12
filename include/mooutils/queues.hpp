@@ -1,6 +1,7 @@
 #ifndef MOOUTILS_QUEUES_HPP_
 #define MOOUTILS_QUEUES_HPP_
 
+#include <cassert>
 #include <deque>
 #include <random>
 #include <type_traits>
