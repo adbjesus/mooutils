@@ -10,14 +10,14 @@
 namespace mooutils {
 
 // CRTP Base class for queues based on an stl (or equivalent) container.
-template <typename Derived, typename Container>
+template <typename Derived, typename Value, typename Container>
 class base_queue {
  private:
   friend Derived;
   using container_type = Container;
 
  public:
-  using value_type = typename container_type::value_type;
+  using value_type = Value;
   using size_type = typename container_type::size_type;
 
   base_queue()
@@ -63,14 +63,14 @@ class base_queue {
 };
 
 template <typename Solution, typename Container = std::deque<Solution>>
-class fifo_queue : public base_queue<fifo_queue<Solution, Container>, Container> {
+class fifo_queue : public base_queue<fifo_queue<Solution, Container>, Solution, Container> {
  public:
   template <typename... Args>
   explicit fifo_queue(Args&&... args)
       : base_class_type(std::forward<Args>(args)...) {}
 
  private:
-  using base_class_type = base_queue<fifo_queue<Solution, Container>, Container>;
+  using base_class_type = base_queue<fifo_queue<Solution, Container>, Solution, Container>;
   using typename base_class_type::value_type;
 
   friend base_class_type;
@@ -88,14 +88,14 @@ class fifo_queue : public base_queue<fifo_queue<Solution, Container>, Container>
 };
 
 template <typename Solution, typename Container = std::vector<Solution>>
-class lifo_queue : public base_queue<lifo_queue<Solution, Container>, Container> {
+class lifo_queue : public base_queue<lifo_queue<Solution, Container>, Solution, Container> {
  public:
   template <typename... Args>
   explicit lifo_queue(Args&&... args)
       : base_class_type(std::forward<Args>(args)...) {}
 
  private:
-  using base_class_type = base_queue<lifo_queue<Solution, Container>, Container>;
+  using base_class_type = base_queue<lifo_queue<Solution, Container>, Solution, Container>;
   using typename base_class_type::value_type;
 
   friend base_class_type;
@@ -113,7 +113,7 @@ class lifo_queue : public base_queue<lifo_queue<Solution, Container>, Container>
 };
 
 template <typename Solution, typename Rng, typename Container = std::vector<Solution>>
-class random_queue : public base_queue<random_queue<Solution, Rng, Container>, Container> {
+class random_queue : public base_queue<random_queue<Solution, Rng, Container>, Solution, Container> {
  public:
   using rng_type = Rng;
 
@@ -123,7 +123,7 @@ class random_queue : public base_queue<random_queue<Solution, Rng, Container>, C
       , rng(std::move(prng)) {}
 
  private:
-  using base_class_type = base_queue<random_queue<Solution, Rng, Container>, Container>;
+  using base_class_type = base_queue<random_queue<Solution, Rng, Container>, Solution, Container>;
   using typename base_class_type::size_type;
   using typename base_class_type::value_type;
 
