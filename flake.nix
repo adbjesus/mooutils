@@ -2,8 +2,14 @@
   description = "mooutils";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
+    nixpkgs = {
+      url = "github:nixos/nixpkgs/nixos-unstable";
+    };
+
+    flake-utils = {
+      url = "github:numtide/flake-utils";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = { self, nixpkgs, flake-utils }:
@@ -14,10 +20,15 @@
           pname = "mooutils";
           version = "0.1.0";
           src = self;
-          nativeBuildInputs = with pkgs; [ cmake ninja doxygen ];
-          buildInputs = with pkgs; [ catch2 ];
+
+          nativeBuildInputs = with pkgs; [
+            cmake
+            ninja
+            doxygen
+            catch2
+          ];
         };
+
         defaultPackage = self.packages.${system}.mooutils;
-        # devShell = pkgs.mkShell { buildInputs = with pkgs; [ gcc meson ]; };
       });
 }

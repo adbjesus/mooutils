@@ -1,8 +1,8 @@
 # MOOUtils - Multi-Objective Optimization Utilities
 
 MOOUtils is a C++20 library containing several utilities to help
-implement multi-objective optimization algorithms. Currently, it is made
-up of the following headers:
+implement multi-objective optimization algorithms. Currently, it
+consists of the following headers:
 
 - [mooutils/concepts.hpp](mooutils/include/mooutils/concepts.hpp) -
   contains the C++20 concepts considered throughout the library in
@@ -24,15 +24,14 @@ up of the following headers:
   vector from a solution, as well as, base classes that can be easily
   used to design a solution.
   
-The documentation can be found at:
-
 Note: This library is still under active development and breaking
-changes may occur between minor versions.
+changes may occur between minor versions. Nonetheless, the code is
+tested and all algorithms and data structures are expected to be
+correct.
 
 ## Dependencies
 
 - [Catch2](https://github.com/catchorg/Catch2) for tests.
-- [Google Benchmark](https://github.com/google/benchmark) for benchmarks.
 - [Doxygen](https://www.doxygen.nl/index.html) for generating documentation.
 
 ## Installation
@@ -61,3 +60,39 @@ cmake -S . -B build -DMOOUTILS_DEVELOPMENT_BUILD=ON
 ```
 
 This will turn on building the tests and benchmarks.
+
+## Using with CMAKE
+
+This library is prepared for easy inclusion with cmake. In particular,
+after installing the library, it should be possible to include it in a
+cmake project by adding:
+
+```CMake
+find_package(mooutils)
+```
+
+Alternatively, it can be fetched from this repo with FetchContent:
+
+```CMake
+include(FetchContent)
+FetchContent_Declare(
+  mooutils
+  GIT_REPOSITORY https://github.com/adbjesus/mooutils.git
+)
+FetchContent_MakeAvailable(mooutils)
+add_library(mooutils::mooutils ALIAS mooutils)
+```
+
+Then, simply link it to the target:
+
+```CMake
+target_link_libraries(sometarget mooutils::mooutils)
+```
+
+## Using with nix flakes
+
+This library is prepared to be used with nix flakes. As such, if you
+are using nix flakes to manage the dependencies of your project you
+can include the url to this repository in your inputs, and add it as a
+dependency.
+
