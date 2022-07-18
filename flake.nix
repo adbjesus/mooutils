@@ -1,6 +1,4 @@
 {
-  description = "mooutils";
-
   inputs = {
     nixpkgs = {
       url = "github:nixos/nixpkgs/nixos-unstable";
@@ -21,6 +19,11 @@
           version = "0.1.0";
           src = self;
 
+          meta = with nixpkgs.lib; {
+            description = "MOOUtils: Multi-Objective Optimization Utilities";
+            license = licenses.mit;
+          };
+
           nativeBuildInputs = with pkgs; [
             cmake
             ninja
@@ -29,6 +32,6 @@
           ];
         };
 
-        defaultPackage = self.packages.${system}.mooutils;
+        packages.default = self.packages.${system}.mooutils;
       });
 }
