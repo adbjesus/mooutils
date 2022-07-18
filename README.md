@@ -39,7 +39,7 @@ correct.
 To install the library you need to first configure the project:
 
 ```sh
-cmake -S . -B build
+cmake -B build
 ```
 
 Then, run:
@@ -52,14 +52,18 @@ This will install the library in the `installdir` folder.
 
 ## Setup for development
 
-To configure an enviroment for development you should set the
-`MOOUTILS_DEVELOPMENT_BUILD` flag to `ON`, for example:
+To configure an enviroment for development you can use the following
+cmake configuration:
 
 ```bash
-cmake -S . -B build -DMOOUTILS_DEVELOPMENT_BUILD=ON
+cmake -B build \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DMOOUTILS_ENABLE_TESTS=ON \
+  -DMOOUTILS_ENABLE_BENCHMARKS=ON \
+  -DMOOUTILS_ENABLE_WARNINGS=ON
 ```
 
-This will turn on building the tests and benchmarks.
+This will turn on building the tests, benchmarks, and warnings.
 
 ## Using with CMAKE
 

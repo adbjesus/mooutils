@@ -14,15 +14,13 @@ project(MOOUTILS
 
 # Project options
 option(MOOUTILS_BUILD_DOCS "Build the documentation" ${MOOUTILS_MASTER_PROJECT})
-option(MOOUTILS_DEVELOPMENT_BUILD "Builds tests, benchmarks, enable warnings, etc.." OFF)
-
-include(CMakeDependentOption)
-cmake_dependent_option(MOOUTILS_BUILD_TESTS "Build tests" ON "MOOUTILS_DEVELOPMENT_BUILD" OFF)
-cmake_dependent_option(MOOUTILS_BUILD_BENCHMARKS "Build benchmarks" ON "MOOUTILS_DEVELOPMENT_BUILD" OFF)
-cmake_dependent_option(MOOUTILS_ENABLE_WERROR "Enable -Werror or /WX" OFF "MOOUTILS_DEVELOPMENT_BUILD" OFF)
+option(MOOUTILS_BUILD_TESTS "Build tests" OFF)
+option(MOOUTILS_BUILD_BENCHMARKS "Build benchmarks" OFF)
+option(MOOUTILS_ENABLE_WARNINGS "Enable a pre-defined set of warning flags" OFF)
+option(MOOUTILS_ENABLE_WERROR "Enable -Werror or /WX" OFF)
 
 # Set warning flags in development builds
-if (MOOUTILS_DEVELOPMENT_BUILD)
+if (MOOUTILS_ENABLE_WARNINGS)
   if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     set(MOOUTILS_CXX_WARN_FLAGS /W4)
     if(MOOUTILS_ENABLE_WERROR)
