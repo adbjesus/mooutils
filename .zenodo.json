@@ -1,0 +1,31 @@
+{
+    "title": "mooutils",
+
+    "description": "Multi-Objective Optimization Utilities (MOOUtils)",
+
+    "keywords": [
+        "multi-objective",
+        "optimization",
+        "utilities"
+    ],
+
+    "upload_type": "software",
+
+    "license": "MIT",
+
+    "access_right": "open",
+
+    "creators": [
+        {
+            "orcid": "0000-0001-7691-0295",
+            "affiliation": "University of Coimbra",
+            "name": "Jesus, Alexandre D."
+        }
+    ],
+
+    "grants": [
+        {
+            "id": "10.13039/501100001871::SFRH/BD/132275/2017"
+        }
+    ]
+}
